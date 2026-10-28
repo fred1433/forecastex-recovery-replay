@@ -1,4 +1,7 @@
-"""Deterministic fuzzing of callback order at restart, invariants checked after every callback."""
+"""Deterministic interleavings of the callbacks recorded at restart, invariants checked after every callback.
+
+These replay the reconciler on recorded evidence; they do not run the controller's actions. The
+controller's actions are covered by the criteria tests on the full controller and broker path."""
 import random
 import sqlite3
 from contextlib import closing
@@ -56,13 +59,16 @@ def replay_once(world, seed):
             expect = sum(net(r, s) for r, s, k, c in seen.values() if k == key and c == 11)
             assert j.exposure(key, client_id=11) == expect, (seed, key)
         decided = {k: rec.decide(s, ckpt) for k, s in SHEETS.items()}
-        history.append({k: d["decision"] + ("?" if d.get("inconsistent") else "") for k, d in decided.items()})
+        history.append({k: d["decision"] + ("?" if d["inconsistent"] else "") for k, d in decided.items()})
+    for it in j.intents("kind='new' AND perm_id IS NOT NULL"):  # a fully filled order is never left working
+        if j.filled(11, it["order_id"]) >= j.terms(it)[1]:
+            assert it["state"] == "FILLED", (seed, it["id"], it["state"])
     mem.close()
     return history
 
 
 class Fuzz(unittest.TestCase):
-    def test_world_a_resumes_under_any_interleaving(self):
+    def test_world_a_resumes_under_recorded_callback_interleavings(self):
         waited = 0
         for seed in range(200):
             h = replay_once("A", seed)
@@ -71,7 +77,7 @@ class Fuzz(unittest.TestCase):
             waited += any(d[LAX.key] == "WAIT?" for d in h)
         self.assertGreater(waited, 0)  # some orders leave the evidence inconsistent for a while: it waits
 
-    def test_worlds_b_never_resume(self):
+    def test_worlds_b_never_resume_under_recorded_callback_interleavings(self):
         for world in ("B1", "B2"):
             for seed in range(200):
                 h = replay_once(world, seed)

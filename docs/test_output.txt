@@ -1,0 +1,44 @@
+test_01_intent_committed_then_crash_before_sending (tests.test_criteria.Criteria.test_01_intent_committed_then_crash_before_sending) ... ok
+test_02_order_accepted_ack_lost_client_killed (tests.test_criteria.Criteria.test_02_order_accepted_ack_lost_client_killed) ... ok
+test_03_partial_fill_while_down (tests.test_criteria.Criteria.test_03_partial_fill_while_down) ... ok
+test_04_fill_during_a_cancel_answered_late (tests.test_criteria.Criteria.test_04_fill_during_a_cancel_answered_late) ... ok
+test_05_duplicate_then_correction (tests.test_criteria.Criteria.test_05_duplicate_then_correction) ... ok
+test_06_other_strategy_untouched (tests.test_criteria.Criteria.test_06_other_strategy_untouched) ... ok
+test_07_insufficient_history_suspends_with_reason (tests.test_criteria.Criteria.test_07_insufficient_history_suspends_with_reason) ... ok
+test_08_equivalent_weather_response_changes_no_order (tests.test_criteria.Criteria.test_08_equivalent_weather_response_changes_no_order) ... ok
+test_09_new_input_same_quote_no_order_change (tests.test_criteria.Criteria.test_09_new_input_same_quote_no_order_change) ... ok
+test_10_wrong_date_stale_or_negative_output_refused (tests.test_criteria.Criteria.test_10_wrong_date_stale_or_negative_output_refused) ... ok
+test_client_id_zero_refused (tests.test_criteria.Criteria.test_client_id_zero_refused) ... ok
+test_execution_with_another_identity_is_a_conflict (tests.test_criteria.Criteria.test_execution_with_another_identity_is_a_conflict) ... ok
+test_frozen_inputs_are_checked (tests.test_criteria.Criteria.test_frozen_inputs_are_checked) ... ok
+test_history_depth_is_inferred_not_declared (tests.test_criteria.Criteria.test_history_depth_is_inferred_not_declared) ... ok
+test_inputs_refused_before_pricing (tests.test_criteria.Criteria.test_inputs_refused_before_pricing) ... ok
+test_lowering_leg_first_and_raise_held_without_proof (tests.test_criteria.Criteria.test_lowering_leg_first_and_raise_held_without_proof) ... ok
+test_missing_end_marker_suspends_without_crashing (tests.test_criteria.Criteria.test_missing_end_marker_suspends_without_crashing) ... ok
+test_new_ids_exceed_every_id_seen (tests.test_criteria.Criteria.test_new_ids_exceed_every_id_seen) ... ok
+test_order_working_before_crash_absent_from_every_reply_suspends (tests.test_criteria.Criteria.test_order_working_before_crash_absent_from_every_reply_suspends) ... ok
+test_orderref_mismatch_on_an_open_order_suspends (tests.test_criteria.Criteria.test_orderref_mismatch_on_an_open_order_suspends) ... ok
+test_restart_under_another_identity_or_live_on_a_used_journal_is_refused (tests.test_criteria.Criteria.test_restart_under_another_identity_or_live_on_a_used_journal_is_refused) ... ok
+test_uncertain_modification_recognised_from_the_order_seen (tests.test_criteria.Criteria.test_uncertain_modification_recognised_from_the_order_seen) ... ok
+test_uncertain_order_filled_while_down_is_not_closed (tests.test_criteria.Criteria.test_uncertain_order_filled_while_down_is_not_closed) ... ok
+test_canonical_fahrenheit (tests.test_criteria.Weather.test_canonical_fahrenheit) ... ok
+test_local_day_has_its_real_length (tests.test_criteria.Weather.test_local_day_has_its_real_length) ... /opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py:361: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x107a713f0>
+  obj, end = self.scan_once(s, idx)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py:361: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x107a71b70>
+  obj, end = self.scan_once(s, idx)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py:361: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x107a707c0>
+  obj, end = self.scan_once(s, idx)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py:361: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x107a72a70>
+  obj, end = self.scan_once(s, idx)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_max_temperature_does_not_cover_the_contract_day (tests.test_criteria.Weather.test_max_temperature_does_not_cover_the_contract_day) ... ok
+test_synthetic_mutations_are_content_changes (tests.test_criteria.Weather.test_synthetic_mutations_are_content_changes) ... ok
+test_world_a_resumes_under_recorded_callback_interleavings (tests.test_fuzz.Fuzz.test_world_a_resumes_under_recorded_callback_interleavings) ... ok
+test_worlds_b_never_resume_under_recorded_callback_interleavings (tests.test_fuzz.Fuzz.test_worlds_b_never_resume_under_recorded_callback_interleavings) ... ok
+----------------------------------------------------------------------
+Ran 29 tests in 14.920s
+OK

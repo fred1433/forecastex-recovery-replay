@@ -62,7 +62,8 @@ def station(data, x0, y0, w, sheet):
         out.append(text(fx(i), top + h + 14, f"{i:02d}:00", 10, MUTED, "middle"))
     out.append(text(x0 + w, top + h + 14, "local hour", 10, MUTED, "end"))
     sy = top + h + 40
-    t0, t1 = steps[0]["fetched"], max(steps[-1]["fetched"], steps[0]["fetched"] + timedelta(hours=2))
+    t0, t1 = steps[0]["fetched"], steps[-1]["fetched"]
+    t1 = t1 if t1 > t0 else t0 + timedelta(hours=1)  # a single response still gets an axis
     gx = lambda t: x0 + 26 + (t - t0) / (t1 - t0) * (w - 26)  # noqa: E731
     out.append(line(x0 + 26, sy, x0 + w, sy, RULE))
     for s in steps:
@@ -72,11 +73,11 @@ def station(data, x0, y0, w, sheet):
         else:
             out.append(f'<circle cx="{x:.1f}" cy="{sy:.1f}" r="3.2" fill="{GREY if s["kind"] == "refresh" else INK}"/>')
     out.append(text(x0 + 26, sy + 17, f"{t0:%H:%M}Z", 10, MUTED))
-    out.append(text(x0 + w, sy + 17, f"{steps[-1]['fetched']:%H:%M}Z, 28 Oct", 10, MUTED, "end"))
+    out.append(text(x0 + w, sy + 17, f"{t1:%H:%M}Z, 28 Oct", 10, MUTED, "end"))
     n_ref = sum(s["kind"] == "refresh" for s in steps)
     n_rev = sum(s["kind"] == "revision" for s in steps)
-    out.append(text(x0 + 26, sy + 33, f"{len(steps)} responses collected. Refreshes rejected: {n_ref}."
-                    f" Content revisions: {n_rev}.", 10.5, MUTED))
+    out.append(text(x0 + 26, sy + 33, f"{len(steps)} responses: {n_ref} unchanged refreshes,"
+                    f" {n_rev} contract-day temperature revisions.", 10.5, MUTED))
     return out
 
 
@@ -92,10 +93,13 @@ def ledger_cells(results):
     events = [(datetime.fromisoformat(w), k, json.loads(d)) for w, k, d in
               j.db.execute("SELECT vt, kind, detail FROM event ORDER BY seq")]
     sent = {d["id"] for _, k, d in events if k == "sent"}
+    refills = j.intents("contract=? AND right='P' AND kind='new'", LAX.key)
+    lost = refills[1]["id"] if len(refills) > 1 else "-"  # the Los Angeles No refill, the order in doubt
+    killed_at, killed = next((t, d["id"]) for t, k, d in events if k == "intent" and d["id"] not in sent)
     touched = {(t, d["id"]) for t, k, d in events if k == "intent"}
     city = {MIA.key: "Miami", LAX.key: "Los Angeles"}
     for t, what, d in events:
-        tone = SEA if "105" in json.dumps(d) and what != "recalculated" else INK
+        tone = SEA if lost in json.dumps(d) and what != "recalculated" else INK
         if what == "intent" and d["kind"] == "new":
             put(t, 0, f"{d['id']} new order, {d['qty']} at {d['lmt']}c: " + (
                 "sent" if d["id"] in sent else "journaled, not sent"), tone)
@@ -117,31 +121,34 @@ def ledger_cells(results):
         elif what == "input unchanged, no recalculation":
             put(t, 0, "later real response, same content: nothing recalculated, no order touched")
         elif what == "blocked":
-            put(t, 0, "changed quote held back" if t < restart else "refresh held while reconciling")
+            put(t, 0, "changed quote held back" if t < restart else f"change held: {d['reason']}")
         elif what == "decision":
             put(t, 0, f"{city[d['contract']]}: {d['decision']}", SEA if d["decision"] == "RESUME" else INK)
-        elif what == "closed as never received":
-            put(t, 0, f"{d['id']} closed as never received; its id is retired")
+        elif what == "closed no fill":
+            put(t, 0, f"{d['id']} closed: not working, no fill; whether it was received stays open; id retired")
+        elif what == "expired":
+            put(t, 0, f"{d['id']} past its contract's last trading time: expired")
         elif what == "cancel requested":
             put(t, 0, f"cancel of {d['orderId']} requested")
+        elif what == "cancel unconfirmed":
+            put(t, 0, f"no answer to the cancel of {d['orderId']}: still counted as working, contract frozen", OCHRE)
         elif what == "cancel confirmed":
-            put(t, 0, f"cancel confirmed: {d['filled']} filled in total, the late fill counted")
+            put(t, 0, f"cancel of {d['orderId']} confirmed: {d['filled']} filled in total, the late fill counted")
         elif what == "restart":
             put(t, 0, "new process, same SQLite file: " + ", ".join(d["unresolved"]) + " unresolved")
-    put(vt("23:49:20"), 0, "process killed (SIGKILL) before i-106 reached the socket", OCHRE)
+    put(killed_at, 0, f"process killed (SIGKILL) before {killed} reached the socket", OCHRE)
     for t, s in a["truth"]["notes"]:
-        put(datetime.fromisoformat(t), 1, s, SEA if "105" in s else (OCHRE if s.startswith("1100") else INK))
+        put(datetime.fromisoformat(t), 1, s, SEA if lost[2:] in s else (OCHRE if s.startswith("1100") else INK))
     cbs = j.get("restart_callbacks")
-    own = sorted({c["orderId"] for c in cbs if c["cb"] == "openOrder" and c["clientId"] == 11})
-    other = sorted({c["orderId"] for c in cbs if c["cb"] == "openOrder" and c["clientId"] != 11})
-    done = sorted({c["orderId"] for c in cbs if c["cb"] == "completedOrder"})
-    dup = j.db.execute("SELECT COUNT(*) FROM event WHERE kind='execution' AND vt>=? AND detail LIKE "
-                       "'%duplicate%'", (restart.isoformat(),)).fetchone()[0]
-    for s in (f"open orders: {', '.join(map(str, own))} ours, found by orderId, orderRef checked, permId recorded; "
+    own = sorted({c["orderId"] for c in cbs if c["cb"] == "openOrder" and c["clientId"] == j.get("identity")["clientId"]})
+    other = sorted({c["orderId"] for c in cbs if c["cb"] == "openOrder"} - set(own))
+    done = sorted({c["permId"] for c in cbs if c["cb"] == "completedOrder"})
+    results = [d["result"] for t, k, d in events if k == "execution" and t >= restart]
+    for s in (f"open orders: {', '.join(map(str, own))} ours, matched by orderId, orderRef and permId; "
               f"{', '.join(map(str, other))} not ours, left alone",
-              f"completed orders: {', '.join(map(str, done))}",
-              f"{sum(c['cb'] == 'execDetails' for c in cbs)} executions: {dup} exact duplicates ignored,"
-              " 1 correction replacing its original",
+              f"completed orders of the day: {len(done)}" + (f" (permIds {', '.join(map(str, done))})" if done else ""),
+              f"{sum(c['cb'] == 'execDetails' for c in cbs)} executions: {results.count('duplicate')} exact "
+              f"duplicates ignored, {results.count('correction')} correction replacing its original",
               "positions: Yes and No already netted; net per strike checked against the journal"):
         put(restart, 2, s)
     return cells
@@ -168,7 +175,7 @@ def ledger(results, x0, y0):
                     out.append(text(cols[col], y + k * 14, ln, 11, color))
                     k += 1
             tallest = max(tallest, k)
-        if t == vt("23:49:20"):
+        if any("process killed" in s for s, _ in cells.get((t, 0), [])):
             kill_y = y + 14 * tallest - 6
         y += 14 * (tallest - 1)
     if kill_y and rest_y:
@@ -179,48 +186,100 @@ def ledger(results, x0, y0):
     return out, y + 10
 
 
-def verdicts(results, x0, y0):
-    b1 = Journal(results["B1"]["db"]).get("decision:" + LAX.key)
-    missing = next((r.split("; ")[-1] for r in b1["reasons"] if "unattributed" in r), "")
-    a_lines = ["The executions reply holds every fill already in the journal,",
-               "so absence is evidence. i-105 is found by orderId with its",
-               "orderRef; fills and the correction are booked once; i-106 is",
-               "closed as never received. Los Angeles resumes; Miami does not."]
-    b_lines = ["Fills the journal saw at 23:45 and 23:49 are missing from",
-               "the reply: no absence proves anything. Our order filled, or",
-               f"another strategy bought ({missing}). Los Angeles is",
-               "suspended, our working order cancelled, and the operator",
-               "asked for the Trade Log over the window it cannot see."]
-    out = [line(x0, y0, x0, y0 + 96, SEA, 3), line(x0 + 490, y0, x0 + 490, y0 + 96, OCHRE, 3),
-           text(x0 + 14, y0 + 14, "World A: history reaches back past the outage", 13.5, SEA, weight="bold"),
-           text(x0 + 504, y0 + 14, "Worlds B1 and B2: history starts at midnight", 13.5, OCHRE, weight="bold")]
-    out += [text(x0 + 14, y0 + 34 + 15 * k, s, 11.5) for k, s in enumerate(a_lines)]
-    out += [text(x0 + 504, y0 + 34 + 15 * k, s, 11.5) for k, s in enumerate(b_lines)]
+def decisions(results):
+    """One row per world, read from its journal: what the reply showed, and both decisions."""
+    rows = []
+    for w in ("A", "B1", "B2"):
+        j = Journal(results[w]["db"])
+        d = {s.key: j.get("decision:" + s.key) for s in (MIA, LAX)}
+        start = datetime.fromisoformat(d[LAX.key]["exec_history_from"])
+        restart = vt("00:10", 29)
+        seen = f"executions back to {start.astimezone(ET):%H:%M} ET" if start < restart else \
+            "none of the fills the journal saw"
+        la = d[LAX.key]
+        why = ("all orders accounted for; the lost one matched on orderId, orderRef, permId"
+               if la["decision"] == "RESUME" else
+               "; ".join(r.split(" (orderId")[0] + " not found" if "not found" in r else
+                         "position " + r.split("; ")[-1] for r in la["reasons"][:2]))
+        rows.append((w, seen, d[MIA.key]["decision"], la["decision"], why))
+        j.db.close()
+    return rows
+
+
+def frieze(results, x0, y0, w):
+    """Trading windows around the restart: the decision that differs between the two cities."""
+    t0, t1 = vt("23:30"), vt("04:20", 29)
+    fx = lambda t: x0 + 120 + (t - t0) / (t1 - t0) * (w - 120)  # noqa: E731
+    out = []
+    for k, s in enumerate((MIA, LAX)):
+        y = y0 + 20 + k * 30
+        end = s.last_trade_utc()
+        out.append(text(x0, y + 4, f"{s.city}", 12, weight="bold"))
+        out.append(f'<rect x="{fx(t0):.1f}" y="{y - 7}" width="{fx(end) - fx(t0):.1f}" height="14" fill="#dfe8ee"/>')
+        out.append(text(fx(end) + 6, y + 4, f"trading ends {end.astimezone(ET):%H:%M} ET, 23:59 local", 10.5,
+                        MUTED))
+    j = Journal(results["A"]["db"])
+    sent = {json.loads(d)["id"] for (d,) in j.db.execute("SELECT detail FROM event WHERE kind='sent'")}
+    killed = min(datetime.fromisoformat(i["vt"]) for i in j.intents() if i["id"] not in sent)
+    j.db.close()
+    marks = [(killed, f"killed {killed.astimezone(ET):%H:%M:%S}", OCHRE), (vt("00:10", 29), "restart 00:10", INK)]
+    for t, label, color in marks:
+        out.append(line(fx(t), y0 + 4, fx(t), y0 + 66, color, 1.2, "3 3"))
+        out.append(text(fx(t) + (-4 if color == OCHRE else 4), y0 - 2, label, 10.5, color,
+                        "end" if color == OCHRE else "start"))
+    for k in range(0, 4):
+        t = vt("00:00", 29) + timedelta(hours=k)
+        out.append(text(fx(t), y0 + 84, f"{t.astimezone(ET):%H:%M}", 10, MUTED, "middle"))
+    out.append(text(fx(vt("23:30")), y0 + 84, "23:30 ET", 10, MUTED, "middle"))
+    return out
+
+
+def table(results, x0, y0):
+    cols = [x0, x0 + 64, x0 + 300, x0 + 400, x0 + 520]
+    out = [text(c, y0, h, 11.5, MUTED) for c, h in zip(cols, ("World", "What the executions reply showed",
+                                                           "Miami", "Los Angeles", "Why"))]
+    for k, (w, seen, mia, la, why) in enumerate(decisions(results)):
+        y = y0 + 26 + k * 24
+        out.append(line(x0, y - 16, x0 + 960, y - 16, RULE))
+        color = SEA if la == "RESUME" else OCHRE
+        out += [text(cols[0], y, w, 12.5, weight="bold"), text(cols[1], y, seen, 11.5),
+                text(cols[2], y, mia.lower(), 12), text(cols[3], y, la.lower(), 12.5, color, weight="bold"),
+                text(cols[4], y, why[:78], 11.5)]
     return out
 
 
 def render(results, data):
     steps = [s for sh in (MIA, LAX) for s in weather.walk(weather.load(data, sh.station), sh)]
-    revs = sum(s["kind"] == "revision" for s in steps)
+    refresh, revs = sum(s["kind"] == "refresh" for s in steps), sum(s["kind"] == "revision" for s in steps)
     first, last = min(s["fetched"] for s in steps), max(s["fetched"] for s in steps)
-    title = (f"Real NWS responses, {first:%H:%M} to {last:%H:%M} UTC on 28 October: " +
-             (f"{revs} changed the contract day's hours, the rest only their timestamps" if revs else
-              f"all {len(steps)} kept the same hours; only timestamps and headers changed"))
-    body = [text(40, 40, title, 16, weight="bold"),
-            text(40, 60, "Hourly temperature forecast over the contract day, 00:00 to 23:59 local. Black: latest"
-                 " content. Grey: earlier content. Dots: each response; grey ones were rejected as refreshes.",
-                 11, MUTED)]
-    body += station(data, 40, 96, 450, MIA)
-    body += station(data, 550, 96, 450, LAX)
-    body += [line(40, 330, W - 40, 330, RULE),
-             text(40, 362, "Simulated: the controller dies at 23:49:20 ET and a new process restarts at 00:10",
-                  16, weight="bold"),
-             text(40, 382, "The broker is a separate simulated process that keeps its state. Nothing here touched"
-                  " a real account. World A shown; B differs after 23:50.", 11, MUTED)]
-    led, y = ledger(results, 40, 418)
+    body = [text(40, 40, "Can quoting resume after a crash at midnight Eastern? It depends on what the broker can"
+                 " still show.", 17, weight="bold"),
+            text(40, 61, "A simulated broker, three simulated histories, real weather inputs. Decisions read from each"
+                 " world's journal at 00:10 ET; A's holds if the executions reply is one contiguous window.", 11.5,
+                 MUTED)]
+    body += table(results, 40, 98)
+    body += [text(40, 214, "Trading windows around the restart", 13, weight="bold")]
+    body += frieze(results, 40, 236, 960)
+    body += [line(40, 344, W - 40, 344, RULE),
+             text(40, 374, f"{len(steps)} NWS responses, {first:%H:%M} to {last:%H:%M} UTC: {refresh} unchanged "
+                  f"refreshes, {revs} contract-day temperature revisions", 14, weight="bold"),
+             text(40, 393, "Hourly forecast for the grid cell next to each settlement station, 00:00 to 23:59 local."
+                  " Settlement uses the station's observations, not this forecast.", 11, MUTED)]
+    body += station(data, 40, 428, 450, MIA)
+    body += station(data, 550, 428, 450, LAX)
+    h = 680
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {h}" width="{W}" height="{h}" '
+            f'font-family="{FONT}"><rect width="{W}" height="{h}" fill="#ffffff"/>' + "".join(body) + "</svg>\n")
+
+
+def timeline(results):
+    body = [text(40, 40, "World A, every event: what the controller knew, what the simulated broker did, what the"
+                 " restart received", 15, weight="bold"),
+            text(40, 60, "Generated from the world A journal, the simulated broker's log and the recorded replies."
+                 " Nothing here touched a real account.", 11, MUTED)]
+    led, y = ledger(results, 40, 96)
     body += led
-    body += verdicts(results, 40, y + 26)
-    h = y + 140
+    h = y + 30
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {h}" width="{W}" height="{h}" '
             f'font-family="{FONT}"><rect width="{W}" height="{h}" fill="#ffffff"/>'
             '<defs><pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" '

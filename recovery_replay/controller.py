@@ -8,11 +8,12 @@ import json
 import socket
 import sys
 import time
+import dataclasses
 from datetime import datetime
 
 from . import weather
 from .contracts import LAX, LIMIT, MIA, SHEETS, vt
-from .ledger import Journal, Reconciler
+from .ledger import UNSETTLED, WORKING, Journal, Reconciler, finalize
 from .quotes import IllustrativeQuoteProvider, admit
 
 ACK_WAIT = 0.3  # wall-clock seconds before an acknowledgement is declared missing
@@ -50,8 +51,15 @@ class Controller:
         if a.client_id == 0:
             sys.exit("refusing to start: clientId 0 can bind manual TWS orders (reqOpenOrders) and modify them")
         self.snaps = {k: weather.frozen(a.incident, s.station) for k, s in SHEETS.items()}  # before any socket
-        self.own, self.j, self.conn = a.client_id, Journal(a.db), Conn(a.port)
-        self.provider = IllustrativeQuoteProvider()
+        self.own, self.j = a.client_id, Journal(a.db)
+        identity = self.j.get("identity")
+        if a.phase == "live" and (identity or self.j.intents()):
+            sys.exit("refusing --phase live: this journal already holds an incident; use --phase restart")
+        if a.phase == "restart" and identity != {"clientId": self.own}:
+            sys.exit(f"refusing to restart as clientId {self.own}: the journal was written by {identity}; only the "
+                     "same TWS user and clientId can modify its orders")
+        self.j.put("identity", {"clientId": self.own})
+        self.conn, self.provider = Conn(a.port), IllustrativeQuoteProvider()
         self.frozen, self.next_valid, self.record, self.now = {}, None, None, vt("23:40")
         self.recon = Reconciler(self.j, self.own, self.now)
 
@@ -81,21 +89,20 @@ class Controller:
                 self.frozen.update({k: "1100 connectivity lost" for k in SHEETS if k not in self.frozen})
             elif cb["code"] in (1101, 1102):
                 self.frozen = {k: r for k, r in self.frozen.items() if not r.startswith("1100")}
-        elif kind == "openOrder" and cb["clientId"] == self.own:
-            for m in self.j.intents("kind='modify' AND order_id=? AND state='SENT'", cb["orderId"]):
-                if (m["lmt"], m["qty"]) == (cb["lmtPrice"], cb["totalQuantity"]):
-                    self.j.set(m["id"], state="ACKED", perm_id=cb["permId"])
         for k, reason in list(self.frozen.items()):
             ref = reason.split()[0]
-            if ref.startswith(("i-", "m-")) and self.j.intents("id=? AND state NOT IN ('SENT','UNCERTAIN')", ref):
+            if ref.startswith(("i-", "m-")) and self.j.intents(
+                    "id=? AND state NOT IN ('JOURNALED','SENT','UNCERTAIN','PENDING_CANCEL')", ref):
                 del self.frozen[k]
-                self.tell("freeze lifted", contract=k, evidence=f"{ref} acknowledged")
+                self.tell("freeze lifted", contract=k, evidence=f"{ref} now {self.j.intents('id=?', ref)[0]['state']}")
 
     # ---- quoting -----------------------------------------------------------------------------------
     def requote(self, sheet, c, label):
-        if c.grid != sheet.grid:
-            return self.tell("input refused", contract=sheet.key, input=label,
-                             reason=f"forecast point {c.grid} is not the contract's {sheet.grid}")
+        refusal = (f"forecast point {c.grid} is not the contract's {sheet.grid}" if c.grid != sheet.grid else
+                   f"{len(c.missing)} of {len(c.hours)} contract-day hours missing" if c.missing else
+                   "; ".join(c.problems))
+        if refusal:  # admitted before the pricing call, never after
+            return self.tell("input refused", contract=sheet.key, input=label, reason=refusal)
         same_input = self.j.get("input:" + sheet.key) == c.revision
         self.j.put("input:" + sheet.key, c.revision)
         inv = self.j.exposure(sheet.key, client_id=self.own)
@@ -110,45 +117,56 @@ class Controller:
         terms = ("yes_cents", "no_cents", "yes_qty", "no_qty")
         same = last is not None and all(last[k] == getattr(q, k) for k in terms)
         self.tell("recalculated", contract=sheet.key, input=label, same_input=same_input, revision=c.revision,
-                  calc_id=q.calc_id,
-                  high=c.high, yes=[q.yes_cents, q.yes_qty], no=[q.no_cents, q.no_qty],
+                  calc_id=q.calc_id, high=c.high, yes=[q.yes_cents, q.yes_qty], no=[q.no_cents, q.no_qty],
                   order_terms="unchanged" if same else "changed")
-        results = []
-        for right in "CP":
-            results.append(self.align(sheet, right, q))
-            if results[-1] == "cancelled":
-                return self.requote(sheet, c, label + ", after cancel")
-        if "blocked" not in results:  # a blocked change stays pending: the next input recalculates
+        results = [self.align(sheet, right, q) for right in sorted("CP", key=lambda r: not self.lowers(sheet, r, q))]
+        if not {"blocked", "cancel", "refused"} & set(results):  # anything held back is recalculated next time
             self.j.put("quote:" + sheet.key, {**q.__dict__, "inventory": inv})
+
+    def working(self, key, right):
+        return self.j.intents(f"contract=? AND right=? AND kind='new' AND state IN {WORKING}", key, right)
+
+    def lowers(self, sheet, right, q):
+        """True when this leg moves away from pairing (lower price, smaller size or cancel): it goes first."""
+        work = [w for w in self.working(sheet.key, right) if w["state"] == "ACKED"]
+        price, target = q.side(right)
+        if not work:
+            return False
+        lmt, total = self.j.terms(work[-1])
+        return price < lmt or target < total - work[-1]["filled"]
 
     def align(self, sheet, right, q):
         price, target = q.side(right)
-        work = self.j.intents("contract=? AND right=? AND state IN ('JOURNALED','SENT','UNCERTAIN','ACKED') "
-                              "AND kind='new'", sheet.key, right)
+        work = self.working(sheet.key, right)
         if sheet.key in self.frozen or any(w["state"] != "ACKED" for w in work):
             self.tell("blocked", contract=sheet.key, right=right, reason=self.frozen.get(sheet.key, "uncertain"))
             return "blocked"
         w = work[-1] if work else None
         if w and target == 0:
             return self.cancel(w)
+        other = [self.j.pending_terms(o)[0] for o in self.working(sheet.key, "P" if right == "C" else "C")]
+        if (target > 0 or w) and other and price + max(other) >= 101:
+            self.tell("refused: would pair with our own other side", contract=sheet.key, right=right, lmt=price,
+                      other=max(other))
+            return "refused"
         if not w and target > 0:
-            self.submit(sheet, right, price, target, q, "new")
-        elif w and (self.j.terms(w)[0], self.j.terms(w)[1] - w["filled"]) != (price, target):
-            self.submit(sheet, right, price, w["filled"] + target, q, "modify", w)
+            return self.submit(sheet, right, price, target, q, "new")
+        if w and (self.j.terms(w)[0], self.j.terms(w)[1] - w["filled"]) != (price, target):
+            return self.submit(sheet, right, price, w["filled"] + target, q, "modify", w)
 
     def worst_case(self, key, right, extra):
-        """Executed plus everything still working or uncertain, on the side that could fill."""
+        """Executed plus everything still working, uncertain or pending, on the side that could fill."""
         inv = self.j.exposure(key, client_id=self.own)
-        live = sum(self.j.terms(i)[1] - i["filled"] for i in self.j.intents(
-            "contract=? AND right=? AND kind='new' AND state IN ('JOURNALED','SENT','UNCERTAIN','ACKED')", key, right))
+        live = sum(self.j.pending_terms(i)[1] - i["filled"] for i in self.working(key, right))
         return inv + (live + extra) * (1 if right == "C" else -1)
 
     def submit(self, sheet, right, price, qty, q, kind, w=None):
-        extra = qty - (self.j.terms(w)[1] if w else 0)
-        if abs(self.worst_case(sheet.key, right, extra)) > LIMIT:
-            return self.tell("refused by exposure limit", contract=sheet.key, right=right, qty=qty)
-        if kind == "new":
-            oid = max(self.next_valid, self.j.max_order_id() + 1)  # never reuse an id the journal knows
+        extra = qty - (self.j.pending_terms(w)[1] if w else 0)
+        if abs(self.worst_case(sheet.key, right, max(extra, 0))) > LIMIT:
+            self.tell("refused by exposure limit", contract=sheet.key, right=right, qty=qty)
+            return "refused"
+        if kind == "new":  # above nextValidId, every id in the journal and every id seen from any client
+            oid = max(self.next_valid, self.j.max_order_id() + 1, max(self.recon.seen_ids | {0}) + 1)
             self.next_valid, iid, ref = oid + 1, f"i-{oid}", f"i-{oid}"
         else:
             oid, ref = w["order_id"], w["id"]
@@ -169,25 +187,38 @@ class Controller:
                 self.j.set(iid, state="UNCERTAIN")
             self.frozen[sheet.key] = f"{iid} unacknowledged"
             self.tell("acknowledgement missing", id=iid, action="no resend; contract frozen until evidence")
+            return "blocked"
 
     def cancel(self, w):
-        self.tell("cancel requested", orderId=w["order_id"], remaining=w["qty"] - w["filled"])
+        """A cancel request is not a cancellation: the order counts as working until a terminal status."""
+        self.j.set(w["id"], state="PENDING_CANCEL")
+        self.tell("cancel requested", orderId=w["order_id"], remaining=self.j.terms(w)[1] - w["filled"])
         self.conn.send(op="cancelOrder", orderId=w["order_id"])
-        self.conn.pump(self.handle, lambda: self.j.intents("id=?", w["id"])[0]["state"] in ("CANCELLED", "FILLED"), 1)
-        row = self.j.intents("id=?", w["id"])[0]
-        self.tell("cancel confirmed", orderId=w["order_id"], state=row["state"], filled=row["filled"])
-        return "cancelled"
+        done = lambda: self.j.intents("id=?", w["id"])[0]["state"] in ("CANCELLED", "FILLED")  # noqa: E731
+        if self.conn.pump(self.handle, done, 1):
+            row = self.j.intents("id=?", w["id"])[0]
+            self.tell("cancel confirmed", orderId=w["order_id"], state=row["state"], filled=row["filled"])
+        else:
+            self.frozen[w["contract"]] = f"{w['id']} cancel unconfirmed"
+            self.tell("cancel unconfirmed", orderId=w["order_id"],
+                      action="order still counted as working; contract frozen until a terminal status")
+        return "cancel"
 
     # ---- inputs: the frozen real responses, and labelled synthetic changes of them -------------------
+    def admitted(self, snap, sheet, mutate=None):
+        """Content plus the provenance problems found at collection time (the replay's clock)."""
+        c = weather.content(mutate(snap) if mutate else snap, sheet)
+        return dataclasses.replace(c, problems=tuple(weather.freshness(snap, snap.fetched_at)))
+
     def real(self, sheet, which):
-        return weather.content(self.snaps[sheet.key][which], sheet)
+        return self.admitted(self.snaps[sheet.key][which], sheet)
 
     def warm(self, sheet, delta, coolest=False):
         snap = self.snaps[sheet.key]["latest"]
         hours = weather.content(snap, sheet).hours
         pick = min if coolest else max
         hour = pick((h for h in range(len(hours)) if hours[h][1] is not None), key=lambda h: hours[h][1])
-        return weather.content(weather.bump_hour(snap, sheet, hour, delta), sheet)
+        return self.admitted(snap, sheet, lambda s: weather.bump_hour(s, sheet, hour, delta))
 
     # ---- phases ------------------------------------------------------------------------------------
     def live(self):
@@ -196,7 +227,7 @@ class Controller:
         self.conn.send(op="reqPositions")
         self.conn.pump(self.handle, lambda: "positionEnd" in self.recon.ends, 2)
         pos = self.recon.positions
-        self.j.put("checkpoint", {"vt": self.now.isoformat(), "net": {
+        self.j.put("checkpoint", {"vt": self.now.isoformat(), "roots": self.j.roots(), "net": {
             k: pos.get((k, "C"), 0) - pos.get((k, "P"), 0) for k in SHEETS}})
         for s in (MIA, LAX):
             self.requote(s, self.real(s, "first"), "real NWS response")
@@ -225,12 +256,12 @@ class Controller:
     def restart(self):
         self.now = vt("00:10", 29)
         self.recon, self.record = Reconciler(self.j, self.own, self.now), []
-        self.tell("restart", unresolved=[i["id"] for i in self.j.intents("state IN ('JOURNALED','SENT','UNCERTAIN')")])
+        self.tell("restart", unresolved=[i["id"] for i in self.j.intents(f"state IN {UNSETTLED}")])
         self.frozen = {k: "reconciling" for k in SHEETS}
         self.conn.send(op="connect", clientId=self.own)
         self.conn.pump(self.handle, lambda: self.next_valid is not None, 2)
         for op, extra in (("reqAllOpenOrders", {}), ("reqCompletedOrders", {"apiOnly": True}),
-                          ("reqExecutions", {"reqId": 1}), ("reqPositions", {})):
+                          ("reqExecutions", {"reqId": self.recon.exec_req}), ("reqPositions", {})):
             self.conn.send(op=op, **extra)
         self.requote(LAX, self.warm(LAX, 2), "refresh during reconciliation")
         self.conn.pump(self.handle, lambda: self.recon.ends == Reconciler.ENDS, 3)
@@ -242,13 +273,14 @@ class Controller:
             self.conn.pump(self.handle, wait=0.5)
         self.j.put("restart_callbacks", self.record)
         self.record = None
-        for k, d in decisions.items():
-            if d["decision"] == "WAIT":
-                d.update(decision="SUSPEND", reasons=d["inconsistent"])
-            for iid in d["retire"]:
-                self.j.set(iid, state="NEVER_RECEIVED")
-                self.tell("closed as never received", id=iid, why="absent from every reply covering its lifetime")
-            for it in self.j.intents("contract=? AND state IN ('JOURNALED','SENT','UNCERTAIN')", k):
+        for k, d in list(decisions.items()):
+            d = decisions[k] = finalize(d)
+            for key, state in (("close_no_fill", "CLOSED_NO_FILL"), ("expired", "EXPIRED"),
+                               ("not_applied", "NOT_APPLIED")):
+                for iid in d[key]:
+                    self.j.set(iid, state=state)
+                    self.tell(state.lower().replace("_", " "), id=iid)
+            for it in self.j.intents(f"contract=? AND state IN {UNSETTLED}", k):
                 self.j.set(it["id"], state="UNRESOLVED")
             self.j.put("decision:" + k, d)
             self.tell("decision", **d)
@@ -261,9 +293,11 @@ class Controller:
                 sheet = SHEETS[k]
                 self.requote(sheet, self.warm(sheet, 2), "after reconciliation")
                 self.clock("00:12", 29)
-                c = self.real(sheet, "latest")
-                down = weather.Content(c.grid, tuple((h, None if v is None else v - 12) for h, v in c.hours))
+                down = self.real(sheet, "latest")
+                down = dataclasses.replace(down, hours=tuple((h, None if v is None else v - 12) for h, v in down.hours))
                 self.requote(sheet, down, "synthetic: every hour -12 degF")
+                self.clock("00:12:30", 29)
+                self.requote(sheet, down, "same input, after the cancel's late answer")
         print(json.dumps({k: d["decision"] for k, d in decisions.items()}), flush=True)
 
 

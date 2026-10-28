@@ -75,6 +75,7 @@ def frozen(directory, station):
 class Content:
     grid: str
     hours: tuple  # ((utc iso hour, degF or None), ...) for every local hour of the contract day
+    problems: tuple = ()  # provenance problems found on admission; not part of the content
 
     @property
     def revision(self):

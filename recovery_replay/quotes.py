@@ -43,7 +43,8 @@ class IllustrativeQuoteProvider:
         yes, no = max(2, fair - 2), max(2, 100 - fair - 2)
         yes_qty = 0 if fair <= 5 else max(0, min(10, LIMIT - inventory))
         no_qty = 0 if fair >= 95 else max(0, min(10, LIMIT + inventory))
-        calc = hashlib.sha256(f"{self.version}|{sheet.key}|{revision}|{inventory}".encode()).hexdigest()[:10]
+        calc = hashlib.sha256(f"{self.version}|{sheet.key}|{revision}|{inventory}|{now.isoformat()}".encode()
+                              ).hexdigest()[:10]
         return QuoteOutput(sheet.key, sheet.market_date.isoformat(), revision, calc, yes, no, yes_qty, no_qty,
                            now, now + timedelta(minutes=5))
 
@@ -64,6 +65,8 @@ def admit(q, sheet, current_revision, now):
     for name in ("yes_cents", "no_cents", "yes_qty", "no_qty"):
         if type(getattr(q, name)) is not int:
             bad.append(f"{name} is not an integer")
+        elif getattr(q, name) < 0:
+            bad.append(f"{name} is negative")  # a zero quantity means: do not quote that side
     if not bad and not (2 <= q.yes_cents <= 99 and 2 <= q.no_cents <= 99):
         bad.append("price outside the $0.02..$0.99 bid range")
     if not bad and q.yes_cents + q.no_cents >= 101:
