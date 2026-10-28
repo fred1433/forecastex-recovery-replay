@@ -1,0 +1,112 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "s": "https://schema.org/",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "unit": "http://codes.wmo.int/common/unit/",
+            "@vocab": "https://api.weather.gov/ontology#",
+            "geometry": {
+                "@id": "s:GeoCoordinates",
+                "@type": "geo:wktLiteral"
+            },
+            "city": "s:addressLocality",
+            "state": "s:addressRegion",
+            "distance": {
+                "@id": "s:Distance",
+                "@type": "s:QuantitativeValue"
+            },
+            "bearing": {
+                "@type": "s:QuantitativeValue"
+            },
+            "value": {
+                "@id": "s:value"
+            },
+            "unitCode": {
+                "@id": "s:unitCode",
+                "@type": "@id"
+            },
+            "forecastOffice": {
+                "@type": "@id"
+            },
+            "forecastGridData": {
+                "@type": "@id"
+            },
+            "publicZone": {
+                "@type": "@id"
+            },
+            "county": {
+                "@type": "@id"
+            }
+        }
+    ],
+    "id": "https://api.weather.gov/points/25.7906,-80.3164",
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -80.3164,
+            25.7906
+        ]
+    },
+    "properties": {
+        "@id": "https://api.weather.gov/points/25.7906,-80.3164",
+        "@type": "wx:Point",
+        "cwa": "MFL",
+        "type": "land",
+        "forecastOffice": "https://api.weather.gov/offices/MFL",
+        "gridId": "MFL",
+        "gridX": 105,
+        "gridY": 51,
+        "forecast": "https://api.weather.gov/gridpoints/MFL/105,51/forecast",
+        "forecastHourly": "https://api.weather.gov/gridpoints/MFL/105,51/forecast/hourly",
+        "forecastGridData": "https://api.weather.gov/gridpoints/MFL/105,51",
+        "observationStations": "https://api.weather.gov/gridpoints/MFL/105,51/stations",
+        "relativeLocation": {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -80.3575565,
+                    25.815956
+                ]
+            },
+            "properties": {
+                "city": "Doral",
+                "state": "FL",
+                "distance": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 468.72628595367
+                },
+                "bearing": {
+                    "unitCode": "wmoUnit:degree_(angle)",
+                    "value": 124
+                }
+            }
+        },
+        "forecastZone": "https://api.weather.gov/zones/forecast/FLZ074",
+        "county": "https://api.weather.gov/zones/county/FLC086",
+        "fireWeatherZone": "https://api.weather.gov/zones/fire/FLZ074",
+        "timeZone": "America/New_York",
+        "radarStation": "KAMX",
+        "astronomicalData": {
+            "sunrise": "2026-10-28T07:27:20-04:00",
+            "sunset": "2026-10-28T18:42:43-04:00",
+            "transit": "2026-10-28T13:05:01-04:00",
+            "civilTwilightBegin": "2026-10-28T07:03:51-04:00",
+            "civilTwilightEnd": "2026-10-28T19:06:12-04:00",
+            "nauticalTwilightBegin": "2026-10-28T06:36:44-04:00",
+            "nauticalTwilightEnd": "2026-10-28T19:33:19-04:00",
+            "astronomicalTwilightBegin": "2026-10-28T06:09:50-04:00",
+            "astronomicalTwilightEnd": "2026-10-28T20:00:13-04:00"
+        },
+        "nwr": {
+            "transmitter": "WZ2531",
+            "sameCode": "012086",
+            "areaBroadcast": "https://api.weather.gov/radio/WZ2531/broadcast",
+            "pointBroadcast": "https://api.weather.gov/points/25.7906,-80.3164/radio"
+        }
+    }
+}

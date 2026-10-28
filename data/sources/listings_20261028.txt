@@ -1,0 +1,27 @@
+Contract descriptions as published on the listing pages, fetched 2026-10-28 around 12:55 UTC.
+
+https://robinhood.com/us/en/prediction-markets/climate/events/denver-daily-temperature-high-october-28-2026-oct-28-2026/
+  title: Denver Daily Temperature High October 28 2026 Greater than 65
+  about: The daily temperature high in Denver, CO as reported by the Weather Underground for the Buckley Space Force Base Station (KBKF).
+  note: the page text says the values are the ones 'used by Forecastex'.
+
+https://robinhood.com/us/en/prediction-markets/climate/events/los-angeles-daily-temperature-high-october-28-2026-oct-28-2026/
+  title: Los Angeles Daily Temperature High October 28 2026 Greater than 71
+  about: The daily temperature high in Los Angeles, CA as reported by the Weather Underground for the Los Angeles Intl Airport Station (KLAX).
+  note: the page text says the values are the ones 'used by Forecastex'.
+
+https://robinhood.com/us/en/prediction-markets/climate/events/miami-daily-temperature-high-october-28-2026-oct-28-2026/
+  title: Miami Daily Temperature High October 28 2026 Greater than 84
+  about: The daily temperature high in Miami, FL as reported by the Weather Underground for the Miami Intl Airport Station (KMIA).
+  note: the page text says the values are the ones 'used by Forecastex'.
+
+https://robinhood.com/us/en/prediction-markets/climate/events/new-york-city-daily-temperature-high-october-28-2026-oct-28-2026/
+  title: New York City Daily Temperature High October 28 2026 Greater than 59
+  about: The daily temperature high in New York City, NY as reported by the Weather Underground for the Laguardia Airport Station (KLGA).
+  note: the page text says the values are the ones 'used by Forecastex'.
+
+https://robinhood.com/us/en/prediction-markets/climate/events/seattle-daily-temperature-high-october-28-2026-oct-28-2026/
+  title: Seattle Daily Temperature High October 28 2026 Greater than 51
+  about: The daily temperature high in Seattle, WA as reported by the Weather Underground for the Seattle-Tacoma Intl Airport Station (KSEA).
+  note: the page text says the values are the ones 'used by Forecastex'.
+
