@@ -216,8 +216,10 @@ def frieze(results, x0, y0, w):
         end = s.last_trade_utc()
         out.append(text(x0, y + 4, f"{s.city}", 12, weight="bold"))
         out.append(f'<rect x="{fx(t0):.1f}" y="{y - 7}" width="{fx(end) - fx(t0):.1f}" height="14" fill="#dfe8ee"/>')
-        out.append(text(fx(end) + 6, y + 4, f"trading ends {end.astimezone(ET):%H:%M} ET, 23:59 local", 10.5,
-                        MUTED))
+        lx = fx(end) + 6
+        if lx < fx(vt("00:10", 29)) + 6 < lx + 190:  # keep the label clear of the restart line
+            lx = fx(vt("00:10", 29)) + 8
+        out.append(text(lx, y + 4, f"trading ends {end.astimezone(ET):%H:%M} ET, 23:59 local", 10.5, MUTED))
     j = Journal(results["A"]["db"])
     sent = {json.loads(d)["id"] for (d,) in j.db.execute("SELECT detail FROM event WHERE kind='sent'")}
     killed = min(datetime.fromisoformat(i["vt"]) for i in j.intents() if i["id"] not in sent)
