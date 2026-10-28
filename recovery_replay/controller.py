@@ -8,10 +8,10 @@ import json
 import socket
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from . import weather
-from .contracts import ET, LAX, LIMIT, MIA, SHEETS, vt
+from .contracts import LAX, LIMIT, MIA, SHEETS, vt
 from .ledger import Journal, Reconciler
 from .quotes import IllustrativeQuoteProvider, admit
 
@@ -49,10 +49,11 @@ class Controller:
     def __init__(self, a):
         if a.client_id == 0:
             sys.exit("refusing to start: clientId 0 can bind manual TWS orders (reqOpenOrders) and modify them")
+        self.snaps = {k: weather.frozen(a.incident, s.station) for k, s in SHEETS.items()}  # before any socket
         self.own, self.j, self.conn = a.client_id, Journal(a.db), Conn(a.port)
-        self.provider, self.data, self.history = IllustrativeQuoteProvider(), a.data, a.history
+        self.provider = IllustrativeQuoteProvider()
         self.frozen, self.next_valid, self.record, self.now = {}, None, None, vt("23:40")
-        self.recon = Reconciler(self.j, self.own, self.now, self.now)
+        self.recon = Reconciler(self.j, self.own, self.now)
 
     def tell(self, what, /, **d):
         self.j.log(self.now, "controller", what, **d)
@@ -92,6 +93,11 @@ class Controller:
 
     # ---- quoting -----------------------------------------------------------------------------------
     def requote(self, sheet, c, label):
+        if c.grid != sheet.grid:
+            return self.tell("input refused", contract=sheet.key, input=label,
+                             reason=f"forecast point {c.grid} is not the contract's {sheet.grid}")
+        same_input = self.j.get("input:" + sheet.key) == c.revision
+        self.j.put("input:" + sheet.key, c.revision)
         inv = self.j.exposure(sheet.key, client_id=self.own)
         last = self.j.get("quote:" + sheet.key)
         if last and (last["input_revision"], last["inventory"]) == (c.revision, inv) and \
@@ -103,7 +109,8 @@ class Controller:
             return self.tell("quote refused", contract=sheet.key, reasons=bad)
         terms = ("yes_cents", "no_cents", "yes_qty", "no_qty")
         same = last is not None and all(last[k] == getattr(q, k) for k in terms)
-        self.tell("recalculated", contract=sheet.key, input=label, revision=c.revision, calc_id=q.calc_id,
+        self.tell("recalculated", contract=sheet.key, input=label, same_input=same_input, revision=c.revision,
+                  calc_id=q.calc_id,
                   high=c.high, yes=[q.yes_cents, q.yes_qty], no=[q.no_cents, q.no_qty],
                   order_terms="unchanged" if same else "changed")
         results = []
@@ -148,7 +155,8 @@ class Controller:
             iid = f"m-{oid}-{len(self.j.intents('order_id=? AND kind=?', oid, 'modify')) + 1}"
         self.j.add_intent(iid, sheet.key, right, kind, oid, qty, price, q.calc_id, q.input_revision, self.now)
         self.tell("intent", id=iid, kind=kind, orderId=oid, qty=qty, lmt=price, calc_id=q.calc_id)
-        if iid == self.kill_at:
+        role = f"{sheet.key}:{right}:{len(self.j.intents('contract=? AND right=? AND kind=?', sheet.key, right, 'new'))}"
+        if kind == "new" and role == self.kill_at:
             print("KILLPOINT", iid, flush=True)
             time.sleep(3600)
         self.conn.send(op="placeOrder", orderId=oid, contract=sheet.tws(right), order={
@@ -170,10 +178,16 @@ class Controller:
         self.tell("cancel confirmed", orderId=w["order_id"], state=row["state"], filled=row["filled"])
         return "cancelled"
 
-    # ---- inputs ------------------------------------------------------------------------------------
-    def inputs(self, sheet):
-        snaps = [s for s in weather.load(self.data, sheet.station) if not weather.freshness(s, s.fetched_at)]
-        return [weather.content(s, sheet) for s in snaps[-2:]]
+    # ---- inputs: the frozen real responses, and labelled synthetic changes of them -------------------
+    def real(self, sheet, which):
+        return weather.content(self.snaps[sheet.key][which], sheet)
+
+    def warm(self, sheet, delta, coolest=False):
+        snap = self.snaps[sheet.key]["latest"]
+        hours = weather.content(snap, sheet).hours
+        pick = min if coolest else max
+        hour = pick((h for h in range(len(hours)) if hours[h][1] is not None), key=lambda h: hours[h][1])
+        return weather.content(weather.bump_hour(snap, sheet, hour, delta), sheet)
 
     # ---- phases ------------------------------------------------------------------------------------
     def live(self):
@@ -184,42 +198,41 @@ class Controller:
         pos = self.recon.positions
         self.j.put("checkpoint", {"vt": self.now.isoformat(), "net": {
             k: pos.get((k, "C"), 0) - pos.get((k, "P"), 0) for k in SHEETS}})
-        real = {k: self.inputs(s) for k, s in SHEETS.items()}
         for s in (MIA, LAX):
-            self.requote(s, real[s.key][0], "real NWS response")
+            self.requote(s, self.real(s, "first"), "real NWS response")
         self.clock("23:44")
         self.conn.send(op="_blip", code=1100)
         self.conn.pump(self.handle, wait=0.15)
-        self.requote(LAX, warm(self.data, 2), "synthetic: warmest hour +2 degF, during 1100")
+        self.requote(LAX, self.warm(LAX, 2), "synthetic: warmest hour +2 degF, during 1100")
         self.conn.send(op="_blip", code=1102)
         self.conn.pump(self.handle, wait=0.15)
         self.clock("23:45")
         self.clock("23:46")
         for s in (MIA, LAX):
-            self.requote(s, real[s.key][-1], "latest real NWS response")
+            self.requote(s, self.real(s, "first"), "real NWS response")
+        self.clock("23:46:30")
+        for s in (MIA, LAX):  # a later real response, downloaded again: new timestamps, same content
+            self.requote(s, self.real(s, "latest"), "later real NWS response")
         self.clock("23:47")
-        self.requote(LAX, warm(self.data, 1, coolest=True), "synthetic: coolest hour +1 degF")
+        self.requote(LAX, self.warm(LAX, 1, coolest=True), "synthetic: coolest hour +1 degF")
         self.clock("23:48")
-        self.requote(LAX, warm(self.data, 2), "synthetic: warmest hour +2 degF")
+        self.requote(LAX, self.warm(LAX, 2), "synthetic: warmest hour +2 degF")
         self.clock("23:49")
-        self.requote(LAX, warm(self.data, 2), "same input, inventory changed")
+        self.requote(LAX, self.warm(LAX, 2), "same input, inventory changed")
         self.clock("23:49:20")
-        self.requote(MIA, real[MIA.key][-1], "same input, inventory changed")
+        self.requote(MIA, self.real(MIA, "latest"), "same input, inventory changed")
 
     def restart(self):
         self.now = vt("00:10", 29)
-        seen_from = self.now - timedelta(days=7) if self.history == "7d" else \
-            self.now.astimezone(ET).replace(hour=0, minute=0, second=0, microsecond=0)
-        self.recon, self.record = Reconciler(self.j, self.own, self.now, seen_from), []
-        self.tell("restart", unresolved=[i["id"] for i in self.j.intents("state IN ('JOURNALED','SENT','UNCERTAIN')")],
-                  history_visible_from=seen_from.isoformat())
+        self.recon, self.record = Reconciler(self.j, self.own, self.now), []
+        self.tell("restart", unresolved=[i["id"] for i in self.j.intents("state IN ('JOURNALED','SENT','UNCERTAIN')")])
         self.frozen = {k: "reconciling" for k in SHEETS}
         self.conn.send(op="connect", clientId=self.own)
         self.conn.pump(self.handle, lambda: self.next_valid is not None, 2)
         for op, extra in (("reqAllOpenOrders", {}), ("reqCompletedOrders", {"apiOnly": True}),
                           ("reqExecutions", {"reqId": 1}), ("reqPositions", {})):
             self.conn.send(op=op, **extra)
-        self.requote(LAX, warm(self.data, 2), "refresh during reconciliation")
+        self.requote(LAX, self.warm(LAX, 2), "refresh during reconciliation")
         self.conn.pump(self.handle, lambda: self.recon.ends == Reconciler.ENDS, 3)
         ckpt = self.j.get("checkpoint")
         for _ in range(3):
@@ -245,21 +258,13 @@ class Controller:
                 for w in self.j.intents("contract=? AND kind='new' AND state='ACKED'", k):
                     self.cancel(w)
             elif d["decision"] == "RESUME":
-                self.requote(SHEETS[k], warm(self.data, 2), "after reconciliation")
+                sheet = SHEETS[k]
+                self.requote(sheet, self.warm(sheet, 2), "after reconciliation")
                 self.clock("00:12", 29)
-                c = weather.content(weather.load(self.data, LAX.station)[-1], LAX)
+                c = self.real(sheet, "latest")
                 down = weather.Content(c.grid, tuple((h, None if v is None else v - 12) for h, v in c.hours))
-                self.requote(SHEETS[k], down, "synthetic: every hour -12 degF")
+                self.requote(sheet, down, "synthetic: every hour -12 degF")
         print(json.dumps({k: d["decision"] for k, d in decisions.items()}), flush=True)
-
-
-def warm(data, delta, coolest=False):
-    """Latest real LAX response with one hour changed: a labelled synthetic revision."""
-    snap = weather.load(data, LAX.station)[-1]
-    hours = weather.content(snap, LAX).hours
-    pick = min if coolest else max
-    hour = pick((h for h in range(24) if hours[h][1] is not None), key=lambda h: hours[h][1])
-    return weather.content(weather.bump_hour(snap, LAX, hour, delta), LAX)
 
 
 def main():
@@ -267,8 +272,7 @@ def main():
     ap.add_argument("--db", required=True)
     ap.add_argument("--port", type=int, required=True)
     ap.add_argument("--phase", choices=["live", "restart"], required=True)
-    ap.add_argument("--data", required=True)
-    ap.add_argument("--history", choices=["7d", "since-midnight"], required=True)
+    ap.add_argument("--incident", required=True, help="directory holding manifest.json and the frozen inputs")
     ap.add_argument("--client-id", type=int, default=11)
     ap.add_argument("--kill-at", default="")
     a = ap.parse_args()

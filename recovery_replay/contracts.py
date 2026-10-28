@@ -1,8 +1,8 @@
 """Contract sheets: a dated contract is chosen first, the city follows from it.
 
-Every field below is copied from a source listed in README.md (section "Sourced facts").
-The TWS `symbol` is deliberately absent: it would be resolved with reqContractDetails
-against a real session, and it has not been verified here.
+Every field below is copied from a source listed in README.md (section "Sourced facts"), mainly
+IBKR's public ForecastTrader contract list saved in data/sources/. The contracts are identified by
+the conIds IBKR publishes; the TWS `symbol` has not been verified and is not used.
 """
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
@@ -30,10 +30,12 @@ class Sheet:
     tz: str
     market_date: date
     strike: int
-    listing: str
+    conid_yes: int
+    conid_no: int
+    question: str
     grid: str
     venue: str = "ForecastEx"
-    product: str = "Daily Temperature Forecast Contract, daily high"
+    product: str = "Daily Temperature Forecast Contract (IBKR product: Daily Temperature High)"
     op: str = ">"  # terms: "exceed"; listing title: "Greater than"
     unit: str = "degF"
     settlement: str = "Weather Underground, Daily Observations table, History tab, Daily view"
@@ -47,20 +49,19 @@ class Sheet:
         return datetime.combine(self.market_date, time(23, 59), ZoneInfo(self.tz)).astimezone(UTC)
 
     def tws(self, right):
-        """TWS API shape for a ForecastEx contract; `localKey` exists only in the simulator."""
-        return {"secType": "OPT", "exchange": "FORECASTX", "currency": "USD", "right": right,
-                "lastTradeDateOrContractMonth": self.market_date.strftime("%Y%m%d"),
-                "strike": self.strike, "localKey": self.key}
+        """TWS API contract by conId; `localKey` exists only in the simulator."""
+        return {"conId": self.conid_yes if right == "C" else self.conid_no, "secType": "OPT",
+                "exchange": "FORECASTX", "currency": "USD", "right": right, "strike": self.strike,
+                "localKey": self.key}
 
 
-RH = "https://robinhood.com/us/en/prediction-markets/climate/events/"
 MIA = Sheet("MIA-20261028-84", "Miami", "KMIA", "Miami International Airport", 25.79056, -80.31639,
-            "America/New_York", date(2026, 10, 28), 84,
-            RH + "miami-daily-temperature-high-october-28-2026-oct-28-2026/",
+            "America/New_York", date(2026, 10, 28), 84, 939505631, 939505635,
+            "Will the highest temperature in Miami (MIA)(KMIA) exceed 84 F on October 28, 2026?",
             "https://api.weather.gov/gridpoints/MFL/106,51")
 LAX = Sheet("LAX-20261028-71", "Los Angeles", "KLAX", "Los Angeles International Airport", 33.93806, -118.38889,
-            "America/Los_Angeles", date(2026, 10, 28), 71,
-            RH + "los-angeles-daily-temperature-high-october-28-2026-oct-28-2026/",
+            "America/Los_Angeles", date(2026, 10, 28), 71, 939505324, 939505330,
+            "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 71 F on October 28, 2026?",
             "https://api.weather.gov/gridpoints/LOX/148,41")
 SHEETS = {s.key: s for s in (MIA, LAX)}
 

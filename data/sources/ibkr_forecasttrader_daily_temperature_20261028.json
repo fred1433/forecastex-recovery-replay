@@ -1,0 +1,1342 @@
+{
+ "Miami": {
+  "product_name": "Miami Daily Temperature High",
+  "category_id": "g138086",
+  "complex_contracts": [
+   {
+    "strike_label": "Above 80",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 80.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_no": 0.04,
+    "bid_yes": 0.96,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505596,
+      "conid_no": 939505601,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 80",
+      "underlying_conid": 853400801,
+      "product_conid": 853400804,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in Miami (MIA)(KMIA) exceed 80 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 81",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 81.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_no": 0.04,
+    "bid_yes": 0.96,
+    "open_interest": 10,
+    "contracts": [
+     {
+      "conid_yes": 939505604,
+      "conid_no": 939505611,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 81",
+      "underlying_conid": 853400801,
+      "product_conid": 853400804,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in Miami (MIA)(KMIA) exceed 81 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 82",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 82.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_no": 0.06,
+    "bid_yes": 0.94,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505614,
+      "conid_no": 939505616,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 82",
+      "underlying_conid": 853400801,
+      "product_conid": 853400804,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in Miami (MIA)(KMIA) exceed 82 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 83",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 83.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.98,
+    "ask_no": 0.1,
+    "bid_yes": 0.9,
+    "bid_no": 0.02,
+    "open_interest": 48,
+    "contracts": [
+     {
+      "conid_yes": 939505621,
+      "conid_no": 939505626,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 83",
+      "underlying_conid": 853400801,
+      "product_conid": 853400804,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in Miami (MIA)(KMIA) exceed 83 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 84",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 84.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.95,
+    "ask_no": 0.17,
+    "bid_yes": 0.83,
+    "bid_no": 0.05,
+    "open_interest": 61,
+    "contracts": [
+     {
+      "conid_yes": 939505631,
+      "conid_no": 939505635,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 84",
+      "underlying_conid": 853400801,
+      "product_conid": 853400804,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in Miami (MIA)(KMIA) exceed 84 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 85",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 85.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.64,
+    "ask_no": 0.47,
+    "bid_yes": 0.53,
+    "bid_no": 0.36,
+    "open_interest": 921,
+    "contracts": [
+     {
+      "conid_yes": 939505638,
+      "conid_no": 939505641,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 85",
+      "underlying_conid": 853400801,
+      "product_conid": 853400804,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in Miami (MIA)(KMIA) exceed 85 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 86",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 86.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.23,
+    "ask_no": 0.84,
+    "bid_yes": 0.16,
+    "bid_no": 0.77,
+    "open_interest": 86,
+    "contracts": [
+     {
+      "conid_yes": 939505644,
+      "conid_no": 939505650,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 86",
+      "underlying_conid": 853400801,
+      "product_conid": 853400804,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in Miami (MIA)(KMIA) exceed 86 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 87",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 87.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.08,
+    "ask_no": 0.98,
+    "bid_yes": 0.02,
+    "bid_no": 0.92,
+    "open_interest": 104,
+    "contracts": [
+     {
+      "conid_yes": 939505655,
+      "conid_no": 939505656,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 87",
+      "underlying_conid": 853400801,
+      "product_conid": 853400804,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in Miami (MIA)(KMIA) exceed 87 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 88",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 88.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.07,
+    "bid_no": 0.93,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505661,
+      "conid_no": 939505666,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 88",
+      "underlying_conid": 853400801,
+      "product_conid": 853400804,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in Miami (MIA)(KMIA) exceed 88 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 89",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 89.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.06,
+    "bid_no": 0.94,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505671,
+      "conid_no": 939505672,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 89",
+      "underlying_conid": 853400801,
+      "product_conid": 853400804,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in Miami (MIA)(KMIA) exceed 89 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 90",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 90.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.06,
+    "bid_no": 0.94,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505677,
+      "conid_no": 939505683,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 90",
+      "underlying_conid": 853400801,
+      "product_conid": 853400804,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in Miami (MIA)(KMIA) exceed 90 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   }
+  ]
+ },
+ "Los Angeles": {
+  "product_name": "Los Angeles Daily Temperature High",
+  "category_id": "g138082",
+  "complex_contracts": [
+   {
+    "strike_label": "Above 68",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 68.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_no": 0.03,
+    "bid_yes": 0.97,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505301,
+      "conid_no": 939505306,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 68",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 68 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 69",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 69.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_no": 0.03,
+    "bid_yes": 0.97,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505311,
+      "conid_no": 939505315,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 69",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 69 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 70",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 70.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_no": 0.05,
+    "bid_yes": 0.95,
+    "open_interest": 20,
+    "contracts": [
+     {
+      "conid_yes": 939505318,
+      "conid_no": 939505321,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 70",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 70 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 71",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 71.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.97,
+    "ask_no": 0.05,
+    "bid_yes": 0.95,
+    "bid_no": 0.03,
+    "open_interest": 13739,
+    "contracts": [
+     {
+      "conid_yes": 939505324,
+      "conid_no": 939505330,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 71",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 71 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 72",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 72.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.9,
+    "ask_no": 0.12,
+    "bid_yes": 0.88,
+    "bid_no": 0.1,
+    "open_interest": 924,
+    "contracts": [
+     {
+      "conid_yes": 939505335,
+      "conid_no": 939505336,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 72",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 72 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 73",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 73.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.57,
+    "ask_no": 0.51,
+    "bid_yes": 0.49,
+    "bid_no": 0.43,
+    "open_interest": 2247,
+    "contracts": [
+     {
+      "conid_yes": 939505341,
+      "conid_no": 939505349,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 73",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 73 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 75",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 75.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.13,
+    "ask_no": 0.92,
+    "bid_yes": 0.08,
+    "bid_no": 0.87,
+    "open_interest": 151,
+    "contracts": [
+     {
+      "conid_yes": 939505344,
+      "conid_no": 939505361,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 75",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 75 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 74",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 74.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.23,
+    "ask_no": 0.82,
+    "bid_yes": 0.18,
+    "bid_no": 0.77,
+    "open_interest": 1051,
+    "contracts": [
+     {
+      "conid_yes": 939505354,
+      "conid_no": 939505359,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 74",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 74 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 76",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 76.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.07,
+    "ask_no": 0.98,
+    "bid_yes": 0.02,
+    "bid_no": 0.93,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505364,
+      "conid_no": 939505371,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 76",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 76 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 77",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 77.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.04,
+    "bid_no": 0.96,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505374,
+      "conid_no": 939505378,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 77",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 77 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 78",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 78.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.04,
+    "bid_no": 0.96,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505383,
+      "conid_no": 939505384,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 78",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 78 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 79",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 79.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.03,
+    "bid_no": 0.97,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505389,
+      "conid_no": 939505395,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 79",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 79 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 80",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 2:59 AM ET",
+    "strike": 80.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.02,
+    "bid_no": 0.98,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505398,
+      "conid_no": 939505401,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 80",
+      "underlying_conid": 853400777,
+      "product_conid": 853400780,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793257140,
+      "question": "Will the highest temperature in Los Angeles (LA)(LAX)(KLAX) exceed 80 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   }
+  ]
+ },
+ "New York": {
+  "product_name": "New York City Daily Temperature High",
+  "category_id": "g138058",
+  "complex_contracts": [
+   {
+    "strike_label": "Above 57",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 57.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_no": 0.09,
+    "bid_yes": 0.91,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505404,
+      "conid_no": 939505410,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 57",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 57 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 58",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 58.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_no": 0.09,
+    "bid_yes": 0.91,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505415,
+      "conid_no": 939505416,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 58",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 58 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 59",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 59.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_no": 0.07,
+    "bid_yes": 0.93,
+    "open_interest": 60,
+    "contracts": [
+     {
+      "conid_yes": 939505421,
+      "conid_no": 939505427,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 59",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 59 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 60",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 60.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.86,
+    "ask_no": 0.24,
+    "bid_yes": 0.76,
+    "bid_no": 0.14,
+    "open_interest": 291,
+    "contracts": [
+     {
+      "conid_yes": 939505430,
+      "conid_no": 939505433,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 60",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 60 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 61",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 61.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.5,
+    "ask_no": 0.59,
+    "bid_yes": 0.41,
+    "bid_no": 0.5,
+    "open_interest": 915,
+    "contracts": [
+     {
+      "conid_yes": 939505436,
+      "conid_no": 939505440,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 61",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 61 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 62",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 62.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.18,
+    "ask_no": 0.87,
+    "bid_yes": 0.13,
+    "bid_no": 0.82,
+    "open_interest": 496,
+    "contracts": [
+     {
+      "conid_yes": 939505445,
+      "conid_no": 939505450,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 62",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 62 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 63",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 63.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.08,
+    "ask_no": 0.96,
+    "bid_yes": 0.04,
+    "bid_no": 0.92,
+    "open_interest": 239,
+    "contracts": [
+     {
+      "conid_yes": 939505455,
+      "conid_no": 939505457,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 63",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 63 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 64",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 64.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.1,
+    "bid_no": 0.9,
+    "open_interest": 12,
+    "contracts": [
+     {
+      "conid_yes": 939505460,
+      "conid_no": 939505467,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 64",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 64 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 65",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 65.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.08,
+    "bid_no": 0.92,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505470,
+      "conid_no": 939505475,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 65",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 65 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 66",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 66.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.07,
+    "bid_no": 0.93,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505478,
+      "conid_no": 939505481,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 66",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 66 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 67",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 67.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.07,
+    "bid_no": 0.93,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505484,
+      "conid_no": 939505490,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 67",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 67 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 68",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 68.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.06,
+    "bid_no": 0.94,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505495,
+      "conid_no": 939505496,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 68",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 68 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 69",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 11:59 PM ET",
+    "strike": 69.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.06,
+    "bid_no": 0.94,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939505501,
+      "conid_no": 939505505,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 69",
+      "underlying_conid": 853400786,
+      "product_conid": 853400791,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793246340,
+      "question": "Will the highest temperature in New York City (NYC)(LGA)(KLGA) exceed 69 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   }
+  ]
+ },
+ "Denver": {
+  "product_name": "Denver Daily Temperature High",
+  "category_id": "g138080",
+  "complex_contracts": [
+   {
+    "strike_label": "Above 64",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 64.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.96,
+    "ask_no": 0.16,
+    "bid_yes": 0.84,
+    "bid_no": 0.04,
+    "open_interest": 5,
+    "contracts": [
+     {
+      "conid_yes": 939504470,
+      "conid_no": 939504473,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 64",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 64 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 65",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 65.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.87,
+    "ask_no": 0.25,
+    "bid_yes": 0.75,
+    "bid_no": 0.13,
+    "open_interest": 182,
+    "contracts": [
+     {
+      "conid_yes": 939504476,
+      "conid_no": 939504480,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 65",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 65 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 66",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 66.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.67,
+    "ask_no": 0.45,
+    "bid_yes": 0.55,
+    "bid_no": 0.33,
+    "open_interest": 281,
+    "contracts": [
+     {
+      "conid_yes": 939504485,
+      "conid_no": 939504490,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 66",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 66 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 67",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 67.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.48,
+    "ask_no": 0.64,
+    "bid_yes": 0.36,
+    "bid_no": 0.52,
+    "open_interest": 30,
+    "contracts": [
+     {
+      "conid_yes": 939504495,
+      "conid_no": 939504497,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 67",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 67 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 68",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 68.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.25,
+    "ask_no": 0.86,
+    "bid_yes": 0.14,
+    "bid_no": 0.75,
+    "open_interest": 55,
+    "contracts": [
+     {
+      "conid_yes": 939504500,
+      "conid_no": 939504507,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 68",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 68 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 69",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 69.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.14,
+    "ask_no": 0.97,
+    "bid_yes": 0.03,
+    "bid_no": 0.86,
+    "open_interest": 3,
+    "contracts": [
+     {
+      "conid_yes": 939504510,
+      "conid_no": 939504513,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 69",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 69 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 70",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 70.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.09,
+    "bid_no": 0.91,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939504516,
+      "conid_no": 939504523,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 70",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 70 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 71",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 71.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.09,
+    "bid_no": 0.91,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939504526,
+      "conid_no": 939504528,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 71",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 71 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 72",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 72.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.09,
+    "bid_no": 0.91,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939504533,
+      "conid_no": 939504543,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 72",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 72 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 74",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 74.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.08,
+    "bid_no": 0.92,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939504538,
+      "conid_no": 939504553,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 74",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 74 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 73",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 73.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_yes": 0.08,
+    "bid_no": 0.92,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939504547,
+      "conid_no": 939504550,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 73",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793077200,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 73 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   },
+   {
+    "strike_label": "Above 63",
+    "expiration": "20261029",
+    "measured_period": "Oct28'26 1:59 AM ET",
+    "strike": 63.0,
+    "interval_type": "Weekly",
+    "restricted": false,
+    "ready": true,
+    "ask_no": 0.09,
+    "bid_yes": 0.91,
+    "open_interest": 0,
+    "contracts": [
+     {
+      "conid_yes": 939678910,
+      "conid_no": 939678915,
+      "exchange": "FORECASTX",
+      "strike_label": "Above 63",
+      "underlying_conid": 853400753,
+      "product_conid": 853400756,
+      "restricted": false,
+      "start_trade_time": 1793163600,
+      "last_trade_time": 1793253540,
+      "question": "Will the highest temperature in Denver (DEN)(KBKF) exceed 63 F on October 28, 2026? (maximum) (max) (hottest)?"
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -4,8 +4,10 @@ It speaks JSON lines shaped after TWS API requests and callbacks (payloads flatt
 not TWS and was never compared with a live session. Three worlds share the same pre-crash
 script and differ in what happens while the controller is dead:
   A   TWS with the Trade Log set to 7 days: the evidence covers the outage.
-  B1  IB Gateway, executions only since midnight; our order 105 filled before midnight.
-  B2  same history; 105 was rejected and another strategy bought the same contracts.
+  B1  IB Gateway, executions only since midnight; our refill order filled before midnight.
+  B2  same history; that order was rejected and another strategy bought the same contracts.
+The script acts on roles (the n-th own order on a contract side), never on order ids, so it does
+not depend on how many orders the controller happened to send.
 B1 and B2 must look identical from the controller's side at 00:10.
 """
 import argparse
@@ -18,6 +20,8 @@ import threading
 from .contracts import ET, LAX, MIA, vt
 
 OWN, OTHER = 11, 7
+ROLES = {"miami yes": (MIA.key, "C", 1), "miami no": (MIA.key, "P", 1), "la yes": (LAX.key, "C", 1),
+         "la no": (LAX.key, "P", 1), "la no refill": (LAX.key, "P", 2)}
 
 
 class Broker:
@@ -34,8 +38,10 @@ class Broker:
     # ---- state helpers -------------------------------------------------------------------------
     def _order(self, cid, oid, key, right, qty, lmt, ref):
         self.perm += 1
+        n = 1 + sum(1 for x in self.orders.values() if (x["clientId"], x["key"], x["right"]) == (cid, key, right))
         o = {"clientId": cid, "orderId": oid, "permId": self.perm, "key": key, "right": right, "qty": qty,
-             "lmt": lmt, "orderRef": ref, "filled": 0, "status": "Submitted", "done_at": None}
+             "lmt": lmt, "orderRef": ref, "filled": 0, "status": "Submitted", "done_at": None,
+             "role": (key, right, n) if cid == OWN else None}
         self.orders[(cid, oid)] = o
         return o
 
@@ -104,15 +110,17 @@ class Broker:
         return when is not None and when >= midnight
 
     # ---- scripted market activity ----------------------------------------------------------------
+    def role(self, name):
+        return next((o for o in self.orders.values() if o["role"] == ROLES[name]), None)
+
     def clock(self, t):
-        own = lambda i: self.orders.get((OWN, i))  # noqa: E731
-        live = {"23:45:00": lambda: self._out_of_order_fill(own(101), 4),
-                "23:49:00": lambda: self.fill(own(104), own(104)["qty"]),
-                "23:49:20": lambda: self.fill(own(102), own(102)["qty"])}
+        live = {"23:45:00": ("miami yes", lambda o: self._out_of_order_fill(o, 4)),
+                "23:49:00": ("la no", lambda o: self.fill(o, o["qty"] - o["filled"])),
+                "23:49:20": ("miami no", lambda o: self.fill(o, o["qty"] - o["filled"]))}
         self.now = t
-        hhmm = t.astimezone(ET).strftime("%H:%M:%S")
-        if hhmm in live:
-            live[hhmm]()
+        name, act = live.get(t.astimezone(ET).strftime("%H:%M:%S"), (None, None))
+        if name and self.role(name):
+            act(self.role(name))
 
     def _out_of_order_fill(self, o, n):
         """execDetails before any status, then the same orderStatus twice."""
@@ -126,21 +134,21 @@ class Broker:
 
     def outage(self):
         """Everything the dead controller cannot see, from 23:50 to 00:05 ET."""
-        own105 = self.orders.get((OWN, 105))
+        refill = self.role("la no refill")
         self.now = vt("23:50"); self.notes.append((self.now, "1100 (simulated nightly reset)"))
         if self.world == "A":
-            self.now = vt("23:52"); first = self.fill(own105, 3)
-            self.now = vt("23:53"); self.fill(own105, 0, price=first["price"], correction_of=first)
-            self.now = vt("23:55"); self.fill(self.orders[(OWN, 103)], 4)
+            self.now = vt("23:52"); first = self.fill(refill, refill["qty"] - 1)
+            self.now = vt("23:53"); self.fill(refill, 0, price=first["price"], correction_of=first)
+            self.now = vt("23:55"); self.fill(self.role("la yes"), 4)
             self.now = vt("23:56"); self.fill(self.orders[(OTHER, 501)], 2)
         elif self.world == "B1":
-            self.now = vt("23:52"); self.fill(own105, own105["qty"])
+            self.now = vt("23:52"); self.fill(refill, refill["qty"])
         else:
-            self.now = vt("23:50:30"); own105["status"], own105["done_at"] = "Cancelled", self.now
-            self.notes.append((self.now, "105 rejected"))
+            self.now = vt("23:50:30"); refill["status"], refill["done_at"] = "Cancelled", self.now
+            self.notes.append((self.now, f"{refill['orderId']} rejected"))
             self.now = vt("23:52")
-            self.fill(self._order(OTHER, 502, LAX.key, "P", own105["qty"], own105["lmt"], "other-strategy"),
-                      own105["qty"])
+            self.fill(self._order(OTHER, 502, LAX.key, "P", refill["qty"], refill["lmt"], "other-strategy"),
+                      refill["qty"])
         self.now = vt("23:57"); self.net_out(LAX.key)
         self.now = vt("23:59")
         for o in self.orders.values():
@@ -153,7 +161,8 @@ class Broker:
     # ---- API requests ----------------------------------------------------------------------------
     def handle(self, m):
         op = m["op"]
-        self.calls.append({k: m[k] for k in m if k != "contract"})
+        self.calls.append({**{k: m[k] for k in m if k != "contract"}, "vt": self.now.isoformat(),
+                           "localKey": m.get("contract", {}).get("localKey")})
         if op == "connect":
             self.cid = m["clientId"]
             self.emit({"cb": "nextValidId", "orderId": self.next_id})
@@ -168,7 +177,7 @@ class Broker:
             o = self.orders[(self.cid, m["orderId"])]  # only our own ids are ever sent here
             o["status"] = "PendingCancel"
             self.emit(self._status(o))
-            if self.world == "A" and o["right"] == "C" and o["key"] == LAX.key:
+            if self.world == "A" and o["role"] == ROLES["la yes"]:
                 self.fill(o, 2)  # executes while the cancel is pending
                 self.notes[-1] = (self.now, f"{o['orderId']} fills 2 while its cancel is pending")
             if o["status"] != "Filled":
@@ -190,10 +199,11 @@ class Broker:
                 if self.visible(datetime.fromisoformat(e["time"])):
                     self.emit(self._exec(e, m["reqId"], "exec"))
             self.emit({"cb": "execDetailsEnd", "reqId": m["reqId"], "_req": "exec"})
-            o = self.orders.get((OWN, 105))
+            o = self.role("la no refill")
             if self.world == "A" and o and o["filled"] < o["qty"]:
-                self.fill(o, o["qty"] - o["filled"])  # after the executions reply, before the positions one
-                self.notes[-1] = (self.now, f"105 fills {o['filled'] - 3} while the replies are being collected")
+                n = o["qty"] - o["filled"]
+                self.fill(o, n)  # after the executions reply, before the positions one
+                self.notes[-1] = (self.now, f"{o['orderId']} fills {n} while the replies are being collected")
                 self.emit(self._status(o))
         elif op == "reqPositions":
             self.subscribed = True
@@ -203,21 +213,21 @@ class Broker:
 
     def place(self, m):
         oid, o = m["orderId"], self.orders.get((self.cid, m["orderId"]))
+        created = False
         if o and o["status"] == "Submitted":  # same id, still working: a modification
             o["lmt"], o["qty"] = m["order"]["lmtPrice"], m["order"]["totalQuantity"]
         elif o or oid < self.next_id:
             return self.emit({"cb": "error", "code": 103, "orderId": oid, "msg": "Duplicate order id"})
         else:
-            self.next_id = oid + 1
-            c = m["contract"]
+            self.next_id, c, created = oid + 1, m["contract"], True
             o = self._order(self.cid, oid, c["localKey"], c["right"], m["order"]["totalQuantity"],
                             m["order"]["lmtPrice"], m["order"]["orderRef"])
-        if oid == 105:
-            self.notes.append((self.now, "105 received, acknowledgement never sent"))
+        if created and o["role"] == ROLES["la no refill"]:
+            self.notes.append((self.now, f"{oid} received, acknowledgement never sent"))
             return  # accepted (or, in B2, about to be rejected) but the acknowledgement never arrives
         ack = [self._open(o), self._status(o)]
-        if oid == 102:
-            self.notes.append((self.now, "acknowledgement of 102 held back"))
+        if created and o["role"] == ROLES["miami no"]:
+            self.notes.append((self.now, f"acknowledgement of {oid} held back"))
             self.held = ack  # late acknowledgement, delivered with the next request
             return
         for a in ack:

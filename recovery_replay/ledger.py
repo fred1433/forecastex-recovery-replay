@@ -89,13 +89,25 @@ class Journal:
 
 
 class Reconciler:
-    """Integrates callbacks in whatever order they arrive; decides only once every reply has ended."""
+    """Integrates callbacks in whatever order they arrive; decides only once every reply has ended.
+
+    How far back the broker's history reaches is not configured: it is deduced from the evidence.
+    Executions already in the journal that the executions reply omits prove the history starts
+    after them; executions the reply contains prove it reaches back to them.
+    """
     ENDS = {"openOrderEnd", "completedOrdersEnd", "execDetailsEnd", "positionEnd"}
 
-    def __init__(self, journal, own, now, visible_from):
-        self.j, self.own, self.now, self.visible_from = journal, own, now, visible_from
-        self.ends, self.status, self.positions = set(), {}, {}
-        self.next_valid = None
+    def __init__(self, journal, own, now):
+        self.j, self.own, self.now = journal, own, now
+        self.ends, self.status, self.positions, self.conflicts = set(), {}, {}, []
+        self.known = {r["root"]: r["vt"] for r in journal.db.execute("SELECT root, vt FROM exec")}
+        self.replied, self.next_valid = {}, None
+
+    def visible_from(self):
+        """Earliest time the executions reply is proven to cover; `now` when nothing is proven."""
+        missing = [vt for root, vt in self.known.items() if root not in self.replied]
+        anchors = [vt for vt in self.replied.values() if not missing or vt > max(missing)]
+        return datetime.fromisoformat(min(anchors)) if anchors else self.now
 
     def feed(self, cb):
         kind = cb["cb"]
@@ -107,35 +119,44 @@ class Reconciler:
             cid, oid = cb["clientId"], cb["orderId"]
             if cid != self.own:
                 return  # seen, never bound, never modified
+            row, ref = self.j.order(oid), cb.get("orderRef")
+            if row is None:
+                return self.conflicts.append(f"orderId {oid} under our clientId is unknown to the journal")
+            if ref is not None and ref != row["id"]:
+                return self.conflicts.append(f"orderId {oid} carries orderRef {ref}, journal says {row['id']}")
+            if row["perm_id"] and cb["permId"] != row["perm_id"]:
+                return self.conflicts.append(f"orderId {oid} has permId {cb['permId']}, journal says {row['perm_id']}")
             self.status[oid] = max(self.status.get(oid, 0), cb.get("filled", 0))
-            row = self.j.order(oid) or next(iter(self.j.intents("id=?", cb.get("orderRef", ""))), None)
-            if row:
-                state = {"Filled": "FILLED", "Cancelled": "CANCELLED"}.get(cb.get("status"), "ACKED")
-                if row["state"] in ("FILLED", "CANCELLED") and state == "ACKED":
-                    state = row["state"]
-                self.j.set(row["id"], perm_id=cb["permId"], state=state, filled=self.status[oid])
+            if ref is None and not row["perm_id"]:
+                return  # a bare status cannot bind an order the journal has never seen acknowledged
+            state = {"Filled": "FILLED", "Cancelled": "CANCELLED"}.get(cb.get("status"), "ACKED")
+            if row["state"] in ("FILLED", "CANCELLED") and state == "ACKED":
+                state = row["state"]
+            self.j.set(row["id"], perm_id=cb["permId"], state=state, filled=self.status[oid])
         elif kind == "execDetails":
-            c = cb["contract"]
-            return self.j.apply_exec(cb["execution"], c["localKey"], c["right"])
+            c, e = cb["contract"], cb["execution"]
+            if cb["reqId"] != -1:  # part of the executions reply, not a live report
+                self.replied[e["execId"].rsplit(".", 1)[0]] = e["time"]
+            return self.j.apply_exec(e, c["localKey"], c["right"])
         elif kind == "position":
             self.positions[(cb["contract"]["localKey"], cb["contract"]["right"])] = cb["pos"]
 
     def decide(self, sheet, checkpoint):
         """Pure reading of the journal and the evidence; writes nothing."""
-        out = {"contract": sheet.key, "reasons": [], "missing": [], "operator": [], "retire": []}
+        out = {"contract": sheet.key, "reasons": list(self.conflicts), "missing": [], "operator": [], "retire": []}
         if self.ends != self.ENDS:
             return {**out, "decision": "WAIT", "reasons": ["replies not complete"]}
-        inconsistent = []
-        covered = datetime.fromisoformat(checkpoint["vt"]) >= self.visible_from
+        inconsistent, seen_from = [], self.visible_from()
+        out["history_visible_from"] = seen_from.isoformat()
         for it in self.j.intents("contract=? AND state IN ('JOURNALED','SENT','UNCERTAIN')", sheet.key):
-            if datetime.fromisoformat(it["vt"]) >= self.visible_from:
+            if datetime.fromisoformat(it["vt"]) >= seen_from:
                 out["retire"].append(it["id"])
             else:
                 out["reasons"].append(f"{it['id']} (orderId {it['order_id']}, buy {it['qty']} "
                                       f"{'Yes' if it['right'] == 'C' else 'No'}) not found in open orders, "
                                       "completed orders or executions")
                 out["missing"].append(f"execution or completed-order record for orderRef {it['id']} between "
-                                      f"{_et(it['vt'])} and {self.visible_from.astimezone(ET):%H:%M} ET")
+                                      f"{_et(it['vt'])} and {_et(seen_from.isoformat())}")
         for it in self.j.intents("contract=? AND kind='new' AND state NOT IN ('JOURNALED','SENT','UNCERTAIN')",
                                  sheet.key):
             seen, booked = self.status.get(it["order_id"]), self.j.filled(self.own, it["order_id"])
@@ -143,16 +164,13 @@ class Reconciler:
                 inconsistent.append(f"orderId {it['order_id']}: status says {seen} filled, executions {booked}")
         broker = self.positions.get((sheet.key, "C"), 0) - self.positions.get((sheet.key, "P"), 0)
         delta, explained = broker - checkpoint["net"][sheet.key], self.j.exposure(sheet.key, since=checkpoint["vt"])
-        if delta != explained:
-            if covered:
-                inconsistent.append(f"position moved {delta:+d} since checkpoint, executions explain {explained:+d}")
-            else:
-                out["reasons"].append(f"position moved {delta:+d} since the {_et(checkpoint['vt'])} checkpoint;"
-                                      f" journal and visible executions explain {explained:+d};"
-                                      f" {delta - explained:+d} unattributed")
-                out["operator"].append("export the TWS Trade Log or the account statement for this contract over the "
-                                       "missing window, or confirm in writing that no other strategy in this account "
-                                       "trades it; quoting stays suspended until one of the two is supplied")
+        if delta != explained:  # a late report can explain it: wait, unless the case is already lost
+            msg = (f"position moved {delta:+d} since the {_et(checkpoint['vt'])} checkpoint; journal and"
+                   f" visible executions explain {explained:+d}; {delta - explained:+d} unattributed")
+            (out["reasons"] if out["reasons"] else inconsistent).append(msg)
+            out["operator"].append("export the TWS Trade Log or the account statement for this contract over the "
+                                   "missing window, or confirm in writing that no other strategy in this account "
+                                   "trades it; quoting stays suspended until one of the two is supplied")
         out["own_exposure"] = self.j.exposure(sheet.key, client_id=self.own)
         out["broker_net"] = broker
         out["inconsistent"] = inconsistent

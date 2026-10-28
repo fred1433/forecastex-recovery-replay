@@ -36,7 +36,7 @@ def station(data, x0, y0, w, sheet):
     vals = [v for c in contents for _, v in c.hours if v is not None] + [sheet.strike]
     lo, hi = min(vals) - 2, max(vals) + 2
     top = y0 + 16
-    fx = lambda i: x0 + 26 + i / 23 * (w - 26)  # noqa: E731
+    fx = lambda i: x0 + 26 + i / (len(contents[0].hours) - 1) * (w - 26)  # noqa: E731
     fy = lambda v: top + h - (v - lo) / (hi - lo) * h  # noqa: E731
     for v in range(lo + (lo % 2), hi + 1, 4):
         out.append(line(x0 + 26, fy(v), x0 + w, fy(v), "#f0f2f5"))
@@ -114,6 +114,8 @@ def ledger_cells(results):
             src = d["input"].replace("degF", "°F").replace(", after cancel", "")
             quiet = d["order_terms"] == "unchanged" and not any(x == t for x, _ in touched)
             put(t, 0, f"{src}: recalculated" + (", quote unchanged, no order touched" if quiet else ""))
+        elif what == "input unchanged, no recalculation":
+            put(t, 0, "later real response, same content: nothing recalculated, no order touched")
         elif what == "blocked":
             put(t, 0, "changed quote held back" if t < restart else "refresh held while reconciling")
         elif what == "decision":
@@ -135,7 +137,7 @@ def ledger_cells(results):
     done = sorted({c["orderId"] for c in cbs if c["cb"] == "completedOrder"})
     dup = j.db.execute("SELECT COUNT(*) FROM event WHERE kind='execution' AND vt>=? AND detail LIKE "
                        "'%duplicate%'", (restart.isoformat(),)).fetchone()[0]
-    for s in (f"open orders: {', '.join(map(str, own))} ours, matched by orderId, orderRef and permId; "
+    for s in (f"open orders: {', '.join(map(str, own))} ours, found by orderId, orderRef checked, permId recorded; "
               f"{', '.join(map(str, other))} not ours, left alone",
               f"completed orders: {', '.join(map(str, done))}",
               f"{sum(c['cb'] == 'execDetails' for c in cbs)} executions: {dup} exact duplicates ignored,"
@@ -180,17 +182,17 @@ def ledger(results, x0, y0):
 def verdicts(results, x0, y0):
     b1 = Journal(results["B1"]["db"]).get("decision:" + LAX.key)
     missing = next((r.split("; ")[-1] for r in b1["reasons"] if "unattributed" in r), "")
-    a_lines = ["Los Angeles resumes quoting. i-105 is found by orderRef",
-               "and permId, its fills and the correction are booked once,",
-               "i-106 is closed as never received and its id is retired.",
-               "Miami passed 23:59 local and is not resupplied."]
-    b_lines = ["Same observations in both worlds, different truths:",
-               "our order filled, or another strategy bought the same",
-               f"contracts. Los Angeles is suspended ({missing}), our",
-               "working order is cancelled, and the operator is asked",
-               "for the Trade Log or statement covering 23:49 to 00:00."]
+    a_lines = ["The executions reply holds every fill already in the journal,",
+               "so absence is evidence. i-105 is found by orderId with its",
+               "orderRef; fills and the correction are booked once; i-106 is",
+               "closed as never received. Los Angeles resumes; Miami does not."]
+    b_lines = ["Fills the journal saw at 23:45 and 23:49 are missing from",
+               "the reply: no absence proves anything. Our order filled, or",
+               f"another strategy bought ({missing}). Los Angeles is",
+               "suspended, our working order cancelled, and the operator",
+               "asked for the Trade Log over the window it cannot see."]
     out = [line(x0, y0, x0, y0 + 96, SEA, 3), line(x0 + 490, y0, x0 + 490, y0 + 96, OCHRE, 3),
-           text(x0 + 14, y0 + 14, "World A: history covers the outage", 13.5, SEA, weight="bold"),
+           text(x0 + 14, y0 + 14, "World A: history reaches back past the outage", 13.5, SEA, weight="bold"),
            text(x0 + 504, y0 + 14, "Worlds B1 and B2: history starts at midnight", 13.5, OCHRE, weight="bold")]
     out += [text(x0 + 14, y0 + 34 + 15 * k, s, 11.5) for k, s in enumerate(a_lines)]
     out += [text(x0 + 504, y0 + 34 + 15 * k, s, 11.5) for k, s in enumerate(b_lines)]
@@ -198,8 +200,13 @@ def verdicts(results, x0, y0):
 
 
 def render(results, data):
-    body = [text(40, 40, "Real NWS responses: a refresh changes timestamps, a revision changes the day's hours",
-                 16, weight="bold"),
+    steps = [s for sh in (MIA, LAX) for s in weather.walk(weather.load(data, sh.station), sh)]
+    revs = sum(s["kind"] == "revision" for s in steps)
+    first, last = min(s["fetched"] for s in steps), max(s["fetched"] for s in steps)
+    title = (f"Real NWS responses, {first:%H:%M} to {last:%H:%M} UTC on 28 October: " +
+             (f"{revs} changed the contract day's hours, the rest only their timestamps" if revs else
+              f"all {len(steps)} kept the same hours; only timestamps and headers changed"))
+    body = [text(40, 40, title, 16, weight="bold"),
             text(40, 60, "Hourly temperature forecast over the contract day, 00:00 to 23:59 local. Black: latest"
                  " content. Grey: earlier content. Dots: each response; grey ones were rejected as refreshes.",
                  11, MUTED)]

@@ -1,13 +1,20 @@
 """One test per row of the criteria table in README.md, on the processes the replay runs."""
+import dataclasses
 import json
+import shutil
+import sqlite3
 import subprocess
 import sys
+import tempfile
 import unittest
-from datetime import timedelta
+from contextlib import closing
+from datetime import date, timedelta
+from pathlib import Path
 
 from recovery_replay import replay, weather
 from recovery_replay.contracts import LAX, LIMIT, MIA, vt
-from recovery_replay.ledger import Journal
+from recovery_replay.controller import Controller
+from recovery_replay.ledger import Journal, Reconciler
 from recovery_replay.quotes import IllustrativeQuoteProvider, admit
 
 from . import runs
@@ -40,6 +47,9 @@ class Criteria(unittest.TestCase):
     def test_02_order_accepted_ack_lost_client_killed(self):
         row = self.a.intents("id='i-105'")[0]
         self.assertIsNotNone(row["perm_id"])
+        cbs = self.a.get("restart_callbacks")
+        self.assertIn({"orderRef": "i-105", "permId": row["perm_id"]},
+                      [{"orderRef": c["orderRef"], "permId": c["permId"]} for c in cbs if c["cb"] == "openOrder"])
         self.assertEqual([c["orderId"] for c in calls("A", "placeOrder")].count(105), 1)
         self.assertEqual(self.r["A"]["live_returncode"], -9)
 
@@ -92,6 +102,11 @@ class Criteria(unittest.TestCase):
         self.assertFalse([c for c in calls("B1", "placeOrder") if c["orderId"] > 106])
 
     def test_08_equivalent_weather_response_changes_no_order(self):
+        at = vt("23:46:30").isoformat()  # a later real response: new timestamps and headers, same content
+        skipped = [d["contract"] for w, d in events(self.a, "input unchanged, no recalculation") if w == at]
+        self.assertEqual(skipped, [MIA.key, LAX.key])
+        self.assertFalse([d for w, d in events(self.a, "recalculated") if w == at])
+        self.assertFalse(self.a.intents("vt=?", at))  # no order touched
         snap = weather.load(replay.DATA, LAX.station)[-1]
         regrouped = weather.bump_hour(snap, LAX, 12, 0)  # same values, runs split differently
         self.assertNotEqual(regrouped.props["temperature"]["values"], snap.props["temperature"]["values"])
@@ -118,9 +133,52 @@ class Criteria(unittest.TestCase):
         self.assertTrue(weather.freshness(snap, snap.fetched_at + timedelta(minutes=45)))  # late response
         self.assertTrue(weather.freshness(snap, snap.update_time + timedelta(hours=13)))  # old source
 
+    def test_history_depth_is_deduced_not_declared(self):
+        self.assertEqual(self.a.get("decision:" + LAX.key)["history_visible_from"], vt("23:45").isoformat())
+        for j in (self.b1, self.b2):
+            self.assertEqual(j.get("decision:" + LAX.key)["history_visible_from"], vt("00:10", 29).isoformat())
+            self.assertEqual({i["state"] for i in j.intents("id IN ('i-105','i-106')")}, {"UNRESOLVED"})
+
+    def test_orderref_or_permid_mismatch_suspends(self):
+        mem = sqlite3.connect(":memory:", isolation_level=None)
+        with closing(sqlite3.connect(self.r["A"]["precrash"])) as src:
+            src.backup(mem)
+        j = Journal(None, conn=mem)
+        rec = Reconciler(j, 11, vt("00:10", 29))
+        for cb in self.a.get("restart_callbacks"):
+            if cb["cb"] == "openOrder" and cb["orderId"] == 105:
+                cb = {**cb, "orderRef": "someone-else"}
+            rec.feed(cb)
+        d = rec.decide(LAX, j.get("checkpoint"))
+        self.assertEqual(d["decision"], "SUSPEND")
+        self.assertIn("orderRef someone-else", " ".join(d["reasons"]))
+        mem.close()
+
+    def test_input_for_another_place_is_refused(self):
+        c = Controller.__new__(Controller)
+        c.j, c.own, c.now, c.frozen = Journal(":memory:"), 11, vt("23:40"), {}
+        c.provider = IllustrativeQuoteProvider()
+        self.addCleanup(c.j.db.close)
+        lax = weather.content(weather.load(replay.DATA, LAX.station)[0], LAX)
+        c.requote(MIA, lax, "Los Angeles forecast offered to Miami")
+        self.assertEqual([d["reason"] for _, d in events(c.j, "input refused")],
+                         [f"forecast point {LAX.grid} is not the contract's {MIA.grid}"])
+        self.assertIsNone(c.j.get("quote:" + MIA.key))
+
+    def test_frozen_inputs_are_checked(self):
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, True)
+        shutil.copytree(replay.INCIDENT, tmp / "incident")
+        f = tmp / "incident" / "KLAX_20261028T131951Z.json"
+        f.write_text(f.read_text().replace('"value": 15', '"value": 16', 1))
+        r = subprocess.run([sys.executable, "-m", "recovery_replay.controller", "--db", ":memory:", "--port", "1",
+                            "--phase", "live", "--incident", str(tmp / "incident")], capture_output=True, text=True)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("hash differs", r.stderr)
+
     def test_client_id_zero_refused(self):
         r = subprocess.run([sys.executable, "-m", "recovery_replay.controller", "--db", ":memory:", "--port", "1",
-                            "--phase", "live", "--data", ".", "--history", "7d", "--client-id", "0"],
+                            "--phase", "live", "--incident", ".", "--client-id", "0"],
                            capture_output=True, text=True)
         self.assertNotEqual(r.returncode, 0)
         self.assertIn("clientId 0", r.stderr)
@@ -131,6 +189,15 @@ class Weather(unittest.TestCase):
         self.assertEqual(weather.to_f(16.666666666666668, "wmoUnit:degC"), 62)
         with self.assertRaises(ValueError):
             weather.to_f(1, "wmoUnit:K")
+
+    def test_local_day_has_its_real_length(self):
+        snap = weather.load(replay.DATA, LAX.station)[0]
+        fall = dataclasses.replace(LAX, market_date=date(2026, 11, 1))  # clocks go back in Los Angeles
+        spring = dataclasses.replace(LAX, market_date=date(2027, 3, 14))  # clocks go forward
+        self.assertEqual(len(weather.content(snap, fall).hours), 25)
+        self.assertEqual(len(weather.content(snap, spring).hours), 23)
+        self.assertEqual(len(weather.content(snap, LAX).hours), 24)
+        self.assertEqual(weather.content(snap, fall).hours[-1][0], "2026-11-02T07:00:00+00:00")  # 23:00 PST
 
     def test_max_temperature_does_not_cover_the_contract_day(self):
         snap = weather.load(replay.DATA, LAX.station)[0]

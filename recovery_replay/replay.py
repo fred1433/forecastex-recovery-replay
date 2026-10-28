@@ -1,5 +1,6 @@
 """python3 -m recovery_replay.replay : runs the three worlds, checks the properties, draws the figure."""
 import hashlib
+from datetime import datetime
 from contextlib import closing
 import json
 import os
@@ -15,8 +16,10 @@ from .contracts import LAX, MIA, SHEETS, TERMS
 from .ledger import Journal
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data" / "nws"
-WORLDS = {"A": "7d", "B1": "since-midnight", "B2": "since-midnight"}
+DATA = ROOT / "data" / "nws"  # every collected response: the figure's top panel
+INCIDENT = ROOT / "data" / "incident"  # the incident's frozen, hashed inputs
+WORLDS = ("A", "B1", "B2")
+KILL_AT = f"{MIA.key}:P:2"  # the second new Miami No order: journaled, then the process dies
 
 
 def control(port, cmd):
@@ -35,9 +38,9 @@ def run(world, out):
     broker = subprocess.Popen([py, "-m", "recovery_replay.broker", "--world", world], stdout=subprocess.PIPE,
                               text=True, env=env)
     port = int(broker.stdout.readline())
-    args = [py, "-m", "recovery_replay.controller", "--db", str(db), "--port", str(port), "--data", str(DATA),
-            "--history", WORLDS[world]]
-    live = subprocess.Popen(args + ["--phase", "live", "--kill-at", "i-106"], stdout=subprocess.PIPE, text=True,
+    args = [py, "-m", "recovery_replay.controller", "--db", str(db), "--port", str(port), "--incident",
+            str(INCIDENT)]
+    live = subprocess.Popen(args + ["--phase", "live", "--kill-at", KILL_AT], stdout=subprocess.PIPE, text=True,
                             env=env)
     killpoint = live.stdout.readline().strip()
     os.kill(live.pid, signal.SIGKILL)
@@ -81,18 +84,22 @@ def properties(results):
     a, b1, b2 = results["A"], results["B1"], results["B2"]
     ja, jb = Journal(a["db"]), Journal(b1["db"])  # read-only use, closed with the process
     calls = [c for r in results.values() for c in r["truth"]["calls"]]
-    placed_mia = [c for c in calls if c["op"] == "placeOrder" and c["orderId"] > 106]
+    late_mia = [c for c in calls if c["op"] == "placeOrder" and c["localKey"] == MIA.key and
+                datetime.fromisoformat(c["vt"]) >= MIA.last_trade_utc()]
+    lost = ja.intents("contract=? AND right='P' AND kind='new'", LAX.key)[1]  # the LAX No refill
+    killed = ja.intents("contract=? AND right='P' AND kind='new'", MIA.key)[1]  # the Miami No refill
     return [
-        ("controller process killed (SIGKILL) at the chosen point",
-         all(r["live_returncode"] == -signal.SIGKILL and r["killpoint"] == "KILLPOINT i-106" for r in results.values())),
+        (f"controller process killed (SIGKILL) at the chosen point ({killed['id']} journaled, not sent)",
+         all(r["live_returncode"] == -signal.SIGKILL and r["killpoint"] == f"KILLPOINT {killed['id']}"
+             for r in results.values())),
         ("A: LAX resumes, MIA is past its last trading time",
          a["decisions"] == {MIA.key: "CLOSED", LAX.key: "RESUME"}),
-        ("A: i-105 found by orderRef with its permId, no second order for it",
-         ja.intents("id='i-105'")[0]["perm_id"] is not None and
-         sum(1 for c in a["truth"]["calls"] if c["op"] == "placeOrder" and c["orderId"] == 105) == 1),
-        ("A: i-106 never reached the broker, closed, id never reused",
-         ja.intents("id='i-106'")[0]["state"] == "NEVER_RECEIVED" and
-         not any(c["op"] == "placeOrder" and c["orderId"] == 106 for c in calls)),
+        (f"A: {lost['id']} found by orderId with matching orderRef, permId recorded; no second order for it",
+         ja.intents("id=?", lost["id"])[0]["perm_id"] is not None and
+         sum(1 for c in a["truth"]["calls"] if c["op"] == "placeOrder" and c["orderId"] == lost["order_id"]) == 1),
+        (f"A: {killed['id']} never reached the broker, closed, id never reused",
+         ja.intents("id=?", killed["id"])[0]["state"] == "NEVER_RECEIVED" and
+         not any(c["op"] == "placeOrder" and c["orderId"] == killed["order_id"] for c in calls)),
         ("A: own exposure equals the broker's hidden truth",
          all(ja.exposure(k, client_id=11) == v for k, v in a["truth"]["own_net"].items())),
         ("B1 and B2: identical observations, identical decision, different truth",
@@ -100,9 +107,9 @@ def properties(results):
          {MIA.key: "CLOSED", LAX.key: "SUSPEND"} and
          b1["truth"]["own_net"].get(LAX.key) != b2["truth"]["own_net"].get(LAX.key)),
         ("B: the suspension names the missing evidence",
-         any("orderRef i-105" in m for m in jb.get("decision:" + LAX.key)["missing"])),
+         any(f"orderRef {lost['id']}" in m for m in jb.get("decision:" + LAX.key)["missing"])),
         ("no MIA order after its last trading time; no reqGlobalCancel; no foreign order touched",
-         not any(c.get("contract", {}).get("localKey") == MIA.key for c in placed_mia) and
+         not late_mia and any(c["localKey"] == MIA.key for c in calls) and
          not any(c["op"] == "reqGlobalCancel" for c in calls) and
          not any(c["op"] in ("cancelOrder", "placeOrder") and c["orderId"] in (0, 501, 502) for c in calls)),
     ]

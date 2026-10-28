@@ -3,7 +3,6 @@ import random
 import sqlite3
 from contextlib import closing
 import unittest
-from datetime import timedelta
 
 from recovery_replay.contracts import LAX, MIA, SHEETS, net, vt
 from recovery_replay.ledger import Journal, Reconciler
@@ -37,13 +36,13 @@ def recorded(world):
     return _recorded[world]
 
 
-def replay_once(world, seed, visible_from):
+def replay_once(world, seed):
     run = runs()[world]
     mem = sqlite3.connect(":memory:", isolation_level=None)
     with closing(sqlite3.connect(run["precrash"])) as src:
         src.backup(mem)
     j = Journal(None, conn=mem)
-    rec = Reconciler(j, 11, NOW, visible_from)
+    rec = Reconciler(j, 11, NOW)
     ckpt, seen, history = j.get("checkpoint"), {}, []
     seen.update({r["root"]: (r["right"], r["shares"], r["contract"], r["client_id"])
                  for r in j.db.execute("SELECT * FROM exec")})
@@ -66,15 +65,15 @@ class Fuzz(unittest.TestCase):
     def test_world_a_resumes_under_any_interleaving(self):
         waited = 0
         for seed in range(200):
-            h = replay_once("A", seed, NOW - timedelta(days=7))
+            h = replay_once("A", seed)
             self.assertEqual(h[-1], {MIA.key: "CLOSED", LAX.key: "RESUME"}, seed)
             self.assertFalse([d for d in h if d[LAX.key].startswith("SUSPEND")], seed)
             waited += any(d[LAX.key] == "WAIT?" for d in h)
         self.assertGreater(waited, 0)  # some orders leave the evidence inconsistent for a while: it waits
 
-    def test_world_b_never_resumes(self):
-        midnight = vt("00:00", 29)
-        for seed in range(200):
-            h = replay_once("B1", seed, midnight)
-            self.assertEqual(h[-1][LAX.key], "SUSPEND", seed)
-            self.assertFalse([d for d in h if d[LAX.key].startswith("RESUME")], seed)
+    def test_worlds_b_never_resume(self):
+        for world in ("B1", "B2"):
+            for seed in range(200):
+                h = replay_once(world, seed)
+                self.assertEqual(h[-1][LAX.key], "SUSPEND", (world, seed))
+                self.assertFalse([d for d in h if d[LAX.key].startswith("RESUME")], (world, seed))

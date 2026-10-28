@@ -1,12 +1,4 @@
 {
- "KAUS": "https://api.weather.gov/gridpoints/EWX/159,88",
- "KMDW": "https://api.weather.gov/gridpoints/LOT/72,69",
- "KDFW": "https://api.weather.gov/gridpoints/FWD/80,109",
- "KDEN": "https://api.weather.gov/gridpoints/BOU/74,66",
- "KHOU": "https://api.weather.gov/gridpoints/HGX/66,89",
- "KLAX": "https://api.weather.gov/gridpoints/LOX/148,41",
  "KMIA": "https://api.weather.gov/gridpoints/MFL/106,51",
- "KNYC": "https://api.weather.gov/gridpoints/OKX/34,45",
- "KSFO": "https://api.weather.gov/gridpoints/MTR/85,98",
- "KSEA": "https://api.weather.gov/gridpoints/SEW/124,61"
+ "KLAX": "https://api.weather.gov/gridpoints/LOX/148,41"
 }

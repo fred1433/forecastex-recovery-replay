@@ -1,0 +1,19 @@
+{
+ "note": "Inputs of the simulated incident, frozen on 28 October 2026. The controller refuses to run if a hash differs.",
+ "stations": {
+  "KMIA": {
+   "first": "KMIA_20261028T123943Z.json",
+   "latest": "KMIA_20261028T131951Z.json"
+  },
+  "KLAX": {
+   "first": "KLAX_20261028T123943Z.json",
+   "latest": "KLAX_20261028T131951Z.json"
+  }
+ },
+ "sha256": {
+  "KLAX_20261028T123943Z.json": "8e1c1c013d9fd5e1207b1b095b52c378b140ae5f08c5b829c233f0ac07427607",
+  "KLAX_20261028T131951Z.json": "777a750648922bbc25f547daac0f9f6f7850011db06bc0330912a067321a39bf",
+  "KMIA_20261028T123943Z.json": "0375f53c9642f7c350729c9927762fa3ff7f26f6a3391e7468c7028490e668da",
+  "KMIA_20261028T131951Z.json": "427b9d927810e8d5d30fdecbc2a93ad634e336be23fb758a844ba807d4ebfe7f"
+ }
+}

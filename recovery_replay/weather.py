@@ -1,8 +1,8 @@
 """Real NWS gridpoint snapshots: relevant content versus transport noise.
 
 The input is the hourly `temperature` series of /gridpoints/{wfo}/{x},{y}, which the NWS
-run-length encodes (`validTime` = start/ISO 8601 duration). It is expanded to the 24 local
-hours of the contract day. `maxTemperature` is not used: its periods (PT13H, sometimes
+run-length encodes (`validTime` = start/ISO 8601 duration). It is expanded to every local
+hour of the contract day: 24, or 23 and 25 on the days clocks change. `maxTemperature` is not used: its periods (PT13H, sometimes
 shorter) do not cover the contract day from 00:00 to 23:59 local time.
 """
 import dataclasses
@@ -49,19 +49,32 @@ class Snapshot:
         return datetime.fromisoformat(self.props["updateTime"])
 
 
+def read(path, station):
+    d = json.loads(Path(path).read_text())
+    fetched = datetime.strptime(d["fetched_at"], "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+    return Snapshot(station, fetched, d["url"], d["headers"], d["body"]["properties"])
+
+
 def load(directory, station):
-    out = []
-    for f in sorted(Path(directory).glob(f"{station}_*.json")):
-        d = json.loads(f.read_text())
-        fetched = datetime.strptime(d["fetched_at"], "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
-        out.append(Snapshot(station, fetched, d["url"], d["headers"], d["body"]["properties"]))
+    return [read(f, station) for f in sorted(Path(directory).glob(f"{station}_*.json"))]
+
+
+def frozen(directory, station):
+    """The incident's inputs: named in manifest.json and checked against their SHA-256."""
+    d = Path(directory)
+    m = json.loads((d / "manifest.json").read_text())
+    out = {}
+    for role, name in m["stations"][station].items():
+        if hashlib.sha256((d / name).read_bytes()).hexdigest() != m["sha256"][name]:
+            raise SystemExit(f"{name}: hash differs from manifest.json, refusing to run the incident")
+        out[role] = read(d / name, station)
     return out
 
 
 @dataclass(frozen=True)
 class Content:
     grid: str
-    hours: tuple  # ((utc iso hour, degF or None), ...) for the 24 local hours of the contract day
+    hours: tuple  # ((utc iso hour, degF or None), ...) for every local hour of the contract day
 
     @property
     def revision(self):
@@ -83,12 +96,12 @@ def content(snap, sheet):
         raise ValueError(f"snapshot for {snap.url}, contract forecast point is {sheet.grid}")
     series = snap.props["temperature"]
     runs = [(*parse_valid(v["validTime"]), v["value"]) for v in series["values"]]
-    start, _ = sheet.day_utc()
+    t, end = sheet.day_utc()
     hours = []
-    for i in range(24):
-        t = start + timedelta(hours=i)
+    while t < end:  # 23, 24 or 25 hours, whatever the local day really lasts
         val = next((to_f(v, series["uom"]) for s, d, v in runs if s <= t < s + d), None)
         hours.append((t.isoformat(), val))
+        t += timedelta(hours=1)
     return Content(snap.url, tuple(hours))
 
 
